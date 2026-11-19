@@ -141,14 +141,14 @@ async function seed() {
     existing(supabase, "products"),
   ]);
 
-  const storageBase = `${url}/storage/v1/object/public/products`;
+  const storageBase = `${url}/storage/v1/object/public/store-media`;
   const bucketFiles = new Set<string>();
-  const { data: rootFiles } = await supabase.storage.from("products").list("", { limit: 1000 });
+  const { data: rootFiles } = await supabase.storage.from("store-media").list("", { limit: 1000 });
   for (const file of rootFiles ?? []) {
     if (file.name) bucketFiles.add(file.name);
   }
   for (const folder of ["categories", "banners"]) {
-    const { data: folderFiles } = await supabase.storage.from("products").list(folder, { limit: 100 });
+    const { data: folderFiles } = await supabase.storage.from("store-media").list(folder, { limit: 100 });
     for (const file of folderFiles ?? []) {
       if (file.name) bucketFiles.add(`${folder}/${file.name}`);
     }

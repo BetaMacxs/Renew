@@ -18,6 +18,7 @@ const buckets: Map<string, Window> =
 (globalThis as Record<symbol, unknown>)[globalKey] = buckets;
 
 export function rateLimitInMemory(key: string, limit: number, windowMs: number): { ok: boolean; retryAfterMs: number } {
+  if (limit <= 0 || windowMs <= 0) throw new RangeError("limit and windowMs must be positive numbers");
   const now = Date.now();
   if (buckets.size > 10_000) {
     for (const [name, window] of buckets) if (window.resetAt <= now) buckets.delete(name);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { MAX_CART_LINES, MAX_LINE_QUANTITY, type CartQuote } from "./cart";
-import { foldDigits } from "./phone";
+import { foldDigits, isValidWhatsAppNumber } from "./phone";
 import { enabledCheckoutMethods, type CheckoutMethod, type StoreSettings } from "./settings";
 import type { Order, OrderEvent, OrderItem } from "./types";
 
@@ -77,6 +77,38 @@ export function isPlausiblePhone(value: string): boolean {
   const folded = foldDigits(value);
   const digits = folded.replace(/\D/g, "");
   return PHONE_SHAPE.test(folded) && digits.length >= 6 && digits.length <= 15;
+}
+
+export type ProductionCheckoutProblem = "store_name" | "contact" | "privacy_policy" | "shipping";
+
+export function productionCheckoutProblem(settings: StoreSettings): ProductionCheckoutProblem | null {
+  if (!settings.store.name || settings.store.name === "My Store") {
+    return "store_name";
+  }
+
+  const hasEmail = Boolean(settings.contact.email) && !settings.contact.email.includes("example.com");
+  const hasPhone = Boolean(settings.contact.phone) && isPlausiblePhone(settings.contact.phone);
+  const hasWhatsapp = Boolean(settings.contact.whatsapp) && isValidWhatsAppNumber(settings.contact.whatsapp);
+  if (!hasEmail && !hasPhone && !hasWhatsapp) {
+    return "contact";
+  }
+
+  if (!settings.policies.privacy.trim()) {
+    return "privacy_policy";
+  }
+
+  if (settings.shipping.methods.length === 0) {
+    return "shipping";
+  }
+
+  const hasPlaceholderShipping = settings.shipping.methods.some((m) =>
+    m.description.includes("We'll confirm the delivery cost and timing"),
+  );
+  if (hasPlaceholderShipping) {
+    return "shipping";
+  }
+
+  return null;
 }
 
 /**

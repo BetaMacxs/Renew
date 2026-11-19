@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Uploads all Detail Corner product, category, and banner photos to your
- * Supabase Storage bucket ('products') on project 'gllpmefitusfsuzrjgtf'.
+ * Supabase Storage bucket ('store-media') using environment-based configuration.
  *
  * Usage:
  *   SUPABASE_SECRET_KEY=your_service_role_key node scripts/upload-images-to-supabase.mjs
@@ -20,9 +20,9 @@ import { env, fail, loadEnv } from "./lib.mjs";
 
 loadEnv();
 
-const PROJECT_REF = "gllpmefitusfsuzrjgtf";
+const PROJECT_REF = env("SUPABASE_URL")?.replace("https://", "").replace(".supabase.co", "") ?? "ikvlzarpvllkdqgdbxoj";
 const DEFAULT_URL = `https://${PROJECT_REF}.supabase.co`;
-const BUCKET = "products";
+const BUCKET = "store-media";
 
 const args = process.argv.slice(2);
 const keyIndex = args.indexOf("--key");
@@ -147,7 +147,7 @@ async function main() {
   console.log(`\n========================================`);
   console.log(`Upload Complete: ${uploadedCount} uploaded, ${failedCount} failed.`);
   console.log(`All files are publicly accessible under:`);
-  console.log(`https://${PROJECT_REF}.supabase.co/storage/v1/object/public/${BUCKET}/`);
+  console.log(`${supabaseUrl}/storage/v1/object/public/${BUCKET}/`);
   console.log(`========================================\n`);
 }
 

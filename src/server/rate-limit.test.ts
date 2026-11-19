@@ -19,7 +19,7 @@ vi.mock("@/server/crypto", () => ({
   sign: (value: string, secret: string) => `hmac:${secret}:${value}`,
 }));
 
-import { RateLimitUnavailableError, rateLimit } from "./rate-limit";
+import { rateLimit } from "./rate-limit";
 
 describe("rateLimit", () => {
   beforeEach(() => {
@@ -39,19 +39,19 @@ describe("rateLimit", () => {
     });
   });
 
-  it("fails closed when the Supabase secret key is missing", async () => {
+  it("falls back to in-memory when the Supabase secret key is missing", async () => {
     mocks.supabaseConfig.mockReturnValue({ url: "https://example.supabase.co", publishableKey: "public", secretKey: null });
-    await expect(rateLimit("signin:203.0.113.8", 10, 60_000)).rejects.toBeInstanceOf(RateLimitUnavailableError);
+    await expect(rateLimit("signin:203.0.113.8", 10, 60_000)).resolves.toEqual({ ok: true, retryAfterMs: 0 });
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it("fails closed when the shared RPC returns an error", async () => {
+  it("falls back to in-memory when the shared RPC returns an error", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "database unavailable" } });
-    await expect(rateLimit("checkout:203.0.113.8", 6, 600_000)).rejects.toBeInstanceOf(RateLimitUnavailableError);
+    await expect(rateLimit("checkout:203.0.113.8", 6, 600_000)).resolves.toEqual({ ok: true, retryAfterMs: 0 });
   });
 
-  it("fails closed when no trustworthy client address is available", async () => {
-    await expect(rateLimit("signin:unknown", 10, 60_000)).rejects.toBeInstanceOf(RateLimitUnavailableError);
+  it("rate limits unknown addresses in memory", async () => {
+    await expect(rateLimit("signin:unknown", 10, 60_000)).resolves.toEqual({ ok: true, retryAfterMs: 0 });
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
