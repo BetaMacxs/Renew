@@ -25,7 +25,7 @@ All settings are read in one place: [`src/server/env.ts`](../src/server/env.ts).
 
 ## Public demo mode
 
-For a store anyone on the internet can try — like the hosted Halden demo — set `PUBLIC_DEMO_MODE=true` on that deployment:
+For a store anyone on the internet can try — like the hosted Detail Corner demo — set `PUBLIC_DEMO_MODE=true` on that deployment:
 
 - A band above the shop says it is a demo, with a link to explore the dashboard.
 - Visitors open the dashboard as a **guest**: every page and control is there, but nothing is saved. They see sample orders made up for the preview, never real ones, and no account details.

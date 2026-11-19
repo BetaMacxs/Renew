@@ -9,11 +9,12 @@ import {
   stockEffect,
 } from "./orders";
 import { settingsSchema } from "./settings";
-import type { Order } from "./types";
+import { InsufficientStockError, applyStockDelta } from "./stock";
+import type { Order, OrderItem } from "./types";
 import { buildInquiryMessage, buildOrderMessage, whatsappUrl, type WhatsAppLabels } from "./whatsapp";
 
 const settings = settingsSchema.parse({
-  store: { name: "Halden", currency: "USD" },
+  store: { name: "Detail Corner", currency: "USD" },
   contact: { whatsapp: "+44 7700 900123" },
   checkout: { whatsapp: true, cashOnDelivery: true, bankTransfer: false },
   shipping: {
@@ -82,6 +83,61 @@ describe("quotes", () => {
     expect(quote.lines.map((line) => line.reason)).toEqual(["sold-out", "gone", "gone", "variant-gone", null]);
     expect(quote.subtotal).toBe(18);
     expect(quote.orderable).toBe(true);
+  });
+
+  it("handles configurable ZAR free-shipping threshold edge cases accurately", () => {
+    const zaSettings = (threshold: number | null) =>
+      settingsSchema.parse({
+        store: { name: "Detail Corner", currency: "ZAR" },
+        shipping: {
+          methods: [
+            { id: "flat", name: "Standard courier", price: 100, requiresAddress: true },
+            { id: "pickup", name: "Pickup", price: 0, requiresAddress: false },
+          ],
+          freeShippingThreshold: threshold,
+        },
+      });
+    const polish = product({
+      id: "polish",
+      name: "Ceramic Sealant",
+      variants: [variant({ id: "polish-v", price: 249.99 })],
+    });
+    const exact500 = product({
+      id: "kit",
+      name: "Wash Kit",
+      variants: [variant({ id: "kit-v", price: 500 })],
+    });
+
+    // Strictly below R500 (R499.98): flat R100 fee applies, R0.02 remaining
+    const below = quoteCart([{ productId: "polish", variantId: "polish-v", quantity: 2 }], [polish], zaSettings(500), "flat");
+    expect(below.subtotal).toBe(499.98);
+    expect(below.shipping).toMatchObject({ fee: 100, waived: false });
+    expect(below.freeShippingRemaining).toBe(0.02);
+    expect(below.total).toBe(599.98);
+
+    // Exact boundary (R500.00 >= R500): fee waived cleanly
+    const exact = quoteCart([{ productId: "kit", variantId: "kit-v", quantity: 1 }], [exact500], zaSettings(500), "flat");
+    expect(exact.shipping).toMatchObject({ fee: 0, waived: true });
+    expect(exact.freeShippingRemaining).toBeNull();
+    expect(exact.total).toBe(500);
+
+    // Changing threshold centrally to R1000 re-applies R100 shipping for R500 order
+    const raised = quoteCart([{ productId: "kit", variantId: "kit-v", quantity: 1 }], [exact500], zaSettings(1000), "flat");
+    expect(raised.shipping).toMatchObject({ fee: 100, waived: false });
+    expect(raised.freeShippingRemaining).toBe(500);
+    expect(raised.total).toBe(600);
+
+    // Disabled (null) or 0 threshold never waives paid shipping; 0-cost pickup is never marked waived
+    const disabled = quoteCart([{ productId: "kit", variantId: "kit-v", quantity: 1 }], [exact500], zaSettings(null), "flat");
+    expect(disabled.shipping).toMatchObject({ fee: 100, waived: false });
+    const zeroThresh = quoteCart([{ productId: "kit", variantId: "kit-v", quantity: 1 }], [exact500], zaSettings(0), "flat");
+    expect(zeroThresh.shipping).toMatchObject({ fee: 100, waived: false });
+    const pickup = quoteCart([{ productId: "kit", variantId: "kit-v", quantity: 1 }], [exact500], zaSettings(500), "pickup");
+    expect(pickup.shipping).toMatchObject({ fee: 0, waived: false });
+
+    // Unknown shipping method ID yields null shipping quote
+    const unknown = quoteCart([{ productId: "kit", variantId: "kit-v", quantity: 1 }], [exact500], zaSettings(500), "tampered-id");
+    expect(unknown.shipping).toBeNull();
   });
 });
 
@@ -199,6 +255,42 @@ describe("order lifecycle", () => {
     expect(metrics.daily.at(-2)).toMatchObject({ date: "2026-05-29", total: 150, count: 2 });
     expect(isStaleHandoff(order("opened", 1, "2026-05-01"), now)).toBe(true);
   });
+
+  it("prevents overselling, sums duplicate variant lines, and restores stock on cancellation", () => {
+    const tracked = product({
+      id: "ceramic-kit",
+      name: "Ceramic Kit",
+      trackInventory: true,
+      variants: [variant({ id: "kit-v1", stock: 5 })],
+    });
+    const item = (quantity: number, variantId = "kit-v1"): OrderItem => ({
+      productId: "ceramic-kit",
+      variantId,
+      name: "Ceramic Kit",
+      variantLabel: "",
+      sku: "CK-1",
+      unitPrice: 250,
+      quantity,
+      lineTotal: 250 * quantity,
+      imageUrl: null,
+    });
+
+    // Duplicate lines summing to 6 exceed stock of 5
+    expect(() => applyStockDelta(tracked, [item(3), item(3)], 1)).toThrow(InsufficientStockError);
+
+    // Missing variant on a tracked product throws cleanly
+    expect(() => applyStockDelta(tracked, [item(1, "deleted-variant")], 1)).toThrow(/no longer exists/);
+
+    // Duplicate lines within stock (2 + 2 = 4) decrement atomically and restore identically
+    const reserved = applyStockDelta(tracked, [item(2), item(2)], 1);
+    expect(reserved?.variants[0].stock).toBe(1);
+    const restored = applyStockDelta(reserved!, [item(2), item(2)], -1);
+    expect(restored?.variants[0].stock).toBe(5);
+
+    // Untracked product never modifies stock
+    const untracked = product({ id: "untracked", trackInventory: false, variants: [variant({ id: "u-v1", stock: 0 })] });
+    expect(applyStockDelta(untracked, [{ ...item(10), productId: "untracked", variantId: "u-v1" }], 1)).toBeNull();
+  });
 });
 
 describe("WhatsApp messages", () => {
@@ -235,7 +327,7 @@ describe("WhatsApp messages", () => {
     const quote = quoteCart(input.lines, [shirt, mug], settings, "standard");
     const order = { ...buildOrder(input, quote, settings, new Date(), { whatsappConfigured: true }), number: 1042 };
     const message = buildOrderMessage(order, {
-      storeName: "Halden",
+      storeName: "Detail Corner",
       money: { currency: "USD", locale: "en" },
       labels,
     });
@@ -259,7 +351,7 @@ describe("WhatsApp messages", () => {
   it("writes a product question with the link", () => {
     const text = buildInquiryMessage(
       { name: "Organic Tee", variantLabel: "Black / M", url: "https://shop.example/products/organic-tee" },
-      { storeName: "Halden", labels },
+      { storeName: "Detail Corner", labels },
     );
     expect(text).toContain("*Organic Tee* (Black / M)");
     expect(text).toContain("Link: https://shop.example/products/organic-tee");

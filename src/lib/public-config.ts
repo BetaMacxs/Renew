@@ -16,6 +16,7 @@ export type PublicConfig = {
   checkoutMethods: CheckoutMethod[];
   shippingMethods: ShippingMethod[];
   freeShippingThreshold: number | null;
+  vat: { enabled: boolean; rate: number; number: string };
 };
 
 export function publicConfigOf(settings: StoreSettings): PublicConfig {
@@ -30,5 +31,10 @@ export function publicConfigOf(settings: StoreSettings): PublicConfig {
     checkoutMethods: enabledCheckoutMethods(settings),
     shippingMethods: settings.shipping.methods,
     freeShippingThreshold: settings.shipping.freeShippingThreshold,
+    vat: {
+      enabled: settings.checkout.vatEnabled,
+      rate: settings.checkout.vatRate,
+      number: settings.checkout.vatNumber,
+    },
   };
 }

@@ -98,6 +98,7 @@ export interface AdminApi {
     id: string,
     patch: { paymentStatus?: PaymentStatus; internalNote?: string },
   ): Promise<Order>;
+  anonymizeOrder(id: string): Promise<Order>;
   deleteOrder(id: string): Promise<void>;
 
   uploadMedia(file: MediaUpload): Promise<{ url: string }>;
@@ -121,6 +122,8 @@ export type SetupState =
   | { kind: "misconfigured"; reason: string };
 
 export interface AuthApi {
+  /** Any valid signed-in account, whether or not it has dashboard access. */
+  currentUser(): Promise<AdminUser | null>;
   currentAdmin(): Promise<AdminUser | null>;
   signIn(email: string, password: string): Promise<{ ok: true } | { ok: false; reason: "invalid" | "not-admin" | "unavailable" }>;
   signOut(): Promise<void>;

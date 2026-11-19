@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import styles from "@/components/admin/admin.module.css";
 import {
   AccountPanel,
   CheckoutPanel,
@@ -11,6 +12,7 @@ import {
 } from "@/components/admin/SettingsForms";
 import { SettingsProvider } from "@/components/admin/settings-kit";
 import { PageHeader } from "@/components/admin/ui";
+import { detectDemoSettings } from "@/lib/demo/seed";
 import { requireAdmin } from "@/server/admin";
 import { getBackend } from "@/server/backend";
 
@@ -35,16 +37,17 @@ export default async function SettingsPage() {
     categories: catalog.categories.filter((category) => category.isDemo).length,
     collections: catalog.collections.filter((collection) => collection.isDemo).length,
   };
+  const demoSettingsHits = detectDemoSettings(settings);
 
   return (
     <>
       <PageHeader title="Settings" description="Each panel saves on its own. Changes are live in the shop as soon as you save." />
-      <div className="grid gap-8 lg:grid-cols-[12rem_minmax(0,1fr)]">
-        <nav aria-label="Settings sections" className="hidden lg:block">
-          <ul className="sticky top-24 space-y-0.5 text-sm">
+      <div className={styles.settingsGrid}>
+        <nav aria-label="Settings sections" className={styles.settingsNav}>
+          <ul className={styles.settingsNavList}>
             {SECTIONS.filter((section) => !admin.preview || section.id !== "account").map((section) => (
               <li key={section.id}>
-                <a href={`#${section.id}`} className="block rounded-[8px] px-3 py-2 text-ink-2 hover:bg-paper hover:text-ink">
+                <a href={`#${section.id}`} className={styles.settingsNavLink}>
                   {section.label}
                 </a>
               </li>
@@ -52,14 +55,14 @@ export default async function SettingsPage() {
           </ul>
         </nav>
         <SettingsProvider initial={settings}>
-          <div className="min-w-0 space-y-6">
+          <div className={styles.settingsContent}>
             <StorePanel />
             <ContactPanel />
             <CheckoutPanel />
             <DeliveryPanel />
             <PoliciesPanel />
             <SocialPanel />
-            <DemoPanel counts={counts} preview={admin.preview} />
+            <DemoPanel counts={counts} demoSettingsHits={demoSettingsHits} preview={admin.preview} />
             {!admin.preview && <AccountPanel email={admin.user.email} backend={getBackend().kind} />}
           </div>
         </SettingsProvider>

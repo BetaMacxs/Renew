@@ -274,10 +274,12 @@ function adminApi(config: SupabaseConfig, client: SupabaseClient, user: AdminUse
         if (/^\d+$/.test(term) && term.length <= 9) {
           query = query.or(`number.eq.${term},customer->>phone.ilike.*${term}*`);
         } else {
-          const safe = term.replace(/[%*,()"\\]/g, " ").trim();
-          query = query.or(
-            `customer->>name.ilike.*${safe}*,customer->>email.ilike.*${safe}*,customer->>phone.ilike.*${safe}*`,
-          );
+          const safe = term.replace(/[%*,():.{}"'\\]/g, " ").trim();
+          if (safe) {
+            query = query.or(
+              `customer->>name.ilike.*${safe}*,customer->>email.ilike.*${safe}*,customer->>phone.ilike.*${safe}*`,
+            );
+          }
         }
       }
       const { data, error, count } = await query;
@@ -331,6 +333,12 @@ function adminApi(config: SupabaseConfig, client: SupabaseClient, user: AdminUse
         p_internal_note: patch.internalNote ?? null,
       });
       if (error) fail(error, "Updating the order");
+      return toOrder(data as Record<string, unknown>);
+    },
+
+    async anonymizeOrder(id) {
+      const { data, error } = await client.rpc("admin_anonymize_order", { p_order_id: id });
+      if (error) fail(error, "Redacting customer details");
       return toOrder(data as Record<string, unknown>);
     },
 
@@ -410,6 +418,12 @@ function authApi(config: SupabaseConfig): AuthApi {
   }
 
   return {
+    async currentUser() {
+      const { data, error } = await (await sessionClient(config)).auth.getUser();
+      if (error || !data.user) return null;
+      return { id: data.user.id, email: data.user.email ?? "" };
+    },
+
     async currentAdmin() {
       return adminFrom(await sessionClient(config));
     },

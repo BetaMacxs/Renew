@@ -13,6 +13,7 @@ import {
   saveGroupingAction,
   setCollectionProductsAction,
 } from "@/server/actions/admin";
+import styles from "./admin.module.css";
 import { ImagePicker } from "./ImagePicker";
 import { ConfirmButton, EmptyState, Modal, Panel, Pill, TextAreaField, TextField, Toggle, useToast } from "./ui";
 
@@ -74,7 +75,7 @@ export function GroupingManager({ kind, items, products }: { kind: Kind; items: 
 
   return (
     <>
-      <div className="mb-4 flex justify-end">
+      <div className={`${styles.mb4} ${styles.flexEnd}`}>
         <button type="button" onClick={() => setEditing("new")} className={buttonClass()} data-testid={`new-${kind}`}>
           <Plus size={17} /> Add {copy.singular}
         </button>
@@ -87,15 +88,15 @@ export function GroupingManager({ kind, items, products }: { kind: Kind; items: 
               : "Collections are hand-picked groups that can mix categories — “Gift guide”, “Summer sale”, “Best sellers”."}
           </EmptyState>
         ) : (
-          <ul className="divide-y divide-line">
+          <ul className={styles.dividerList}>
             {order.map((item, index) => (
-              <li key={item.id} className="flex items-center gap-4 px-5 py-3">
-                <span className="flex flex-col">
+              <li key={item.id} className={styles.groupingRow}>
+                <span className={styles.moveCol}>
                   <button
                     type="button"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
-                    className="grid size-7 place-items-center rounded text-ink-3 hover:bg-canvas hover:text-ink disabled:opacity-30"
+                    className={styles.moveBtn}
                     aria-label={`Move ${item.name} up`}
                   >
                     <ArrowUp size={15} />
@@ -104,18 +105,18 @@ export function GroupingManager({ kind, items, products }: { kind: Kind; items: 
                     type="button"
                     onClick={() => move(index, 1)}
                     disabled={index === order.length - 1}
-                    className="grid size-7 place-items-center rounded text-ink-3 hover:bg-canvas hover:text-ink disabled:opacity-30"
+                    className={styles.moveBtn}
                     aria-label={`Move ${item.name} down`}
                   >
                     <ArrowDown size={15} />
                   </button>
                 </span>
-                <span className="relative size-14 shrink-0 overflow-hidden rounded-[10px] bg-tile">
-                  {item.imageUrl && <Image src={item.imageUrl} alt="" fill sizes="56px" className="object-cover" />}
+                <span className={styles.thumb56}>
+                  {item.imageUrl && <Image src={item.imageUrl} alt="" fill sizes="56px" className={styles.imageCover} />}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="truncate font-medium" data-testid="grouping-name">
+                <span className={styles.productRowBody}>
+                  <span className={styles.productRowTitleRow}>
+                    <span className={styles.productRowName} data-testid="grouping-name">
                       {item.name}
                     </span>
                     {!item.visible && (
@@ -125,7 +126,7 @@ export function GroupingManager({ kind, items, products }: { kind: Kind; items: 
                     )}
                     {item.isDemo && <Pill tone="muted">Demo</Pill>}
                   </span>
-                  <span className="mt-0.5 block text-xs text-ink-3">
+                  <span className={styles.productRowSub}>
                     /{copy.path}/{item.slug} · {count(item.id)} {count(item.id) === 1 ? "product" : "products"}
                   </span>
                 </span>
@@ -230,12 +231,12 @@ function GroupingDialog({
       title={item ? `Edit ${copy.singular}` : `New ${copy.singular}`}
       size={kind === "collection" ? "lg" : "md"}
       footer={
-        <div className="flex w-full items-center justify-between gap-2">
+        <div className={styles.dialogFooterSpread}>
           {item ? (
             <ConfirmButton
               variant="ghost"
               size="sm"
-              className="text-danger"
+              className={styles.dangerTextBtn}
               title={`Delete “${item.name}”?`}
               description={copy.deleteText}
               confirmLabel={`Delete ${copy.singular}`}
@@ -252,7 +253,7 @@ function GroupingDialog({
           ) : (
             <span />
           )}
-          <div className="flex gap-2">
+          <div className={styles.flexWrapGap2}>
             <button type="button" onClick={onClose} disabled={busy} className={buttonClass({ variant: "ghost" })}>
               Cancel
             </button>
@@ -263,8 +264,8 @@ function GroupingDialog({
         </div>
       }
     >
-      <div className={kind === "collection" ? "grid gap-6 md:grid-cols-2" : ""}>
-        <div className="space-y-4">
+      <div className={kind === "collection" ? styles.collectionDialogGrid : ""}>
+        <div className={styles.stack4}>
           <TextField
             label="Name"
             value={name}
@@ -279,9 +280,9 @@ function GroupingDialog({
           <TextField
             label="URL handle"
             prefix={`/${copy.path}/`}
+            prefixVariant="grouping"
             value={slug}
             error={errors.slug}
-            className="[&_input]:ps-28"
             onChange={(event) => {
               setSlugTouched(true);
               setSlug(slugInput(event.target.value));
@@ -296,7 +297,7 @@ function GroupingDialog({
             onChange={(event) => setDescription(event.target.value)}
             hint="Shown at the top of the page."
           />
-          <ImagePicker label="Photo" value={imageUrl} onChange={setImageUrl} aspect="aspect-[3/2]" hint="Used on the homepage and when shared." />
+          <ImagePicker label="Photo" value={imageUrl} onChange={setImageUrl} aspect="3/2" hint="Used on the homepage and when shared." />
           <Toggle
             checked={visible}
             onChange={setVisible}
@@ -311,23 +312,23 @@ function GroupingDialog({
 
         {kind === "collection" && (
           <div>
-            <p className="mb-1.5 text-sm font-medium">
-              Products <span className="font-normal text-ink-3">({members.size} selected)</span>
+            <p className={styles.collectionMembersLabel}>
+              Products <span className={styles.collectionMembersCount}>({members.size} selected)</span>
             </p>
-            <div className="relative mb-2">
-              <Search size={15} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-ink-3" />
+            <div className={styles.collectionSearchWrap}>
+              <Search size={15} className={styles.searchIcon} />
               <input
                 value={filter}
                 onChange={(event) => setFilter(event.target.value)}
                 placeholder="Find a product"
                 aria-label="Find a product"
-                className="h-9 w-full rounded-[10px] border border-line-strong bg-paper pe-3 ps-8 text-sm outline-none focus:border-ink"
+                className={styles.collectionSearchInput}
               />
             </div>
-            <ul className="max-h-80 divide-y divide-line overflow-y-auto rounded-[10px] border border-line">
+            <ul className={`${styles.collectionList} ${styles.dividerList}`}>
               {visibleProducts.map((product) => (
                 <li key={product.id}>
-                  <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-canvas">
+                  <label className={styles.collectionListItem}>
                     <input
                       type="checkbox"
                       checked={members.has(product.id)}
@@ -339,14 +340,14 @@ function GroupingDialog({
                           return next;
                         })
                       }
-                      className="size-4 accent-[var(--accent)]"
+                      className={styles.checkbox}
                     />
-                    <span className="relative size-8 shrink-0 overflow-hidden rounded-[6px] bg-tile">
-                      {product.imageUrl && <Image src={product.imageUrl} alt="" fill sizes="32px" className="object-cover" />}
+                    <span className={styles.thumb32}>
+                      {product.imageUrl && <Image src={product.imageUrl} alt="" fill sizes="32px" className={styles.imageCover} />}
                     </span>
-                    <span className="min-w-0 flex-1 truncate">{product.name}</span>
+                    <span className={styles.collectionItemName}>{product.name}</span>
                     {product.status !== "active" && (
-                      <span className="shrink-0 text-xs text-ink-3">{product.status === "draft" ? "Draft" : "Archived"}</span>
+                      <span className={styles.collectionItemStatus}>{product.status === "draft" ? "Draft" : "Archived"}</span>
                     )}
                   </label>
                 </li>

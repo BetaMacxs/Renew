@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   // The public demo's dashboard preview can look, not upload.
   if (admin.preview) return Response.json({ error: new ReadOnlyPreviewError().message }, { status: 403 });
 
-  if (!rateLimit(`upload:${await clientAddress()}`, 120, 10 * 60 * 1000).ok) {
+  if (!(await rateLimit(`upload:${await clientAddress()}`, 120, 10 * 60 * 1000)).ok) {
     return Response.json({ error: "Too many uploads at once. Wait a minute and try again." }, { status: 429 });
   }
 

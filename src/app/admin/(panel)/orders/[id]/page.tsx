@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WhatsAppIcon } from "@/components/icons/brands";
-import { DeleteOrderButton, InternalNote, OrderStatusActions, PaymentStatusControl } from "@/components/admin/OrderActions";
+import styles from "@/components/admin/admin.module.css";
+import { AnonymizeOrderButton, DeleteOrderButton, InternalNote, OrderStatusActions, PaymentStatusControl } from "@/components/admin/OrderActions";
 import { ChannelBadge, formatDateTime, OrderStatusPill, PaymentPill } from "@/components/admin/OrderBits";
 import { Notice, PageHeader, Panel } from "@/components/admin/ui";
-import { formatMoney } from "@/lib/domain/money";
+import { formatMoney, includedVatAmount } from "@/lib/domain/money";
 import { ORDER_STATUS_META, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/domain/orders";
 import { normalizePhone } from "@/lib/domain/phone";
 import type { OrderEvent } from "@/lib/domain/types";
@@ -53,13 +54,13 @@ export default async function OrderDetailPage({ params }: Props) {
     <>
       <PageHeader
         back={
-          <Link href="/admin/orders" className="inline-flex items-center gap-1.5 text-sm text-ink-3 hover:text-ink">
+          <Link href="/admin/orders" className={styles.backLink}>
             <ArrowLeft size={15} /> Orders
           </Link>
         }
         title={`Order #${order.number}`}
         description={
-          <span className="flex flex-wrap items-center gap-3">
+          <span className={styles.orderHeaderMeta}>
             <OrderStatusPill status={order.status} />
             <ChannelBadge channel={order.channel} />
             <span>{formatDateTime(order.createdAt)}</span>
@@ -67,16 +68,16 @@ export default async function OrderDetailPage({ params }: Props) {
         }
       />
 
-      <Panel className="mb-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <Panel className={styles.mb6}>
+        <div className={styles.orderStatusBanner}>
           <div>
-            <p className="font-semibold">{meta.label}</p>
-            <p className="mt-1 max-w-2xl text-sm text-ink-2">{meta.description}</p>
+            <p className={styles.orderStatusTitle}>{meta.label}</p>
+            <p className={styles.orderStatusDesc}>{meta.description}</p>
           </div>
           <OrderStatusActions order={order} />
         </div>
         {(order.status === "prepared" || order.status === "opened") && (
-          <div className="mt-4">
+          <div className={styles.mt4}>
             <Notice tone="warning">
               Look in your WhatsApp chats for a message starting with “<strong>Order #{order.number}</strong>”. Mark it as
               received only once you have it. If it never arrives, discard the handoff.
@@ -85,61 +86,72 @@ export default async function OrderDetailPage({ params }: Props) {
         )}
       </Panel>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-6">
+      <div className={styles.orderDetailGrid}>
+        <div className={styles.stack6}>
           <Panel title="Items" padded={false}>
-            <ul className="divide-y divide-line">
+            <ul className={styles.dividerList}>
               {order.items.map((item, index) => (
-                <li key={`${item.variantId}-${index}`} className="flex items-center gap-4 px-5 py-4">
-                  <span className="relative size-14 shrink-0 overflow-hidden rounded-[10px] bg-tile">
-                    {item.imageUrl && <Image src={item.imageUrl} alt="" fill sizes="56px" className="object-cover" />}
+                <li key={`${item.variantId}-${index}`} className={styles.orderItemRow}>
+                  <span className={styles.thumb56}>
+                    {item.imageUrl && <Image src={item.imageUrl} alt="" fill sizes="56px" className={styles.imageCover} />}
                   </span>
-                  <span className="min-w-0 flex-1">
+                  <span className={styles.orderItemBody}>
                     {item.productId ? (
-                      <Link href={`/admin/products/${item.productId}`} className="block truncate font-medium hover:underline">
+                      <Link href={`/admin/products/${item.productId}`} className={styles.orderItemNameLink}>
                         {item.name}
                       </Link>
                     ) : (
-                      <span className="block truncate font-medium">{item.name}</span>
+                      <span className={styles.orderItemName}>{item.name}</span>
                     )}
-                    <span className="block text-sm text-ink-3">
+                    <span className={styles.orderItemSub}>
                       {[item.variantLabel, `${formatMoney(item.unitPrice, money, "full")} × ${item.quantity}`].filter(Boolean).join(" · ")}
                     </span>
                   </span>
-                  <span className="font-mono text-sm">{formatMoney(item.lineTotal, money, "full")}</span>
+                  <span className="mono">{formatMoney(item.lineTotal, money, "full")}</span>
                 </li>
               ))}
             </ul>
-            <dl className="space-y-1.5 border-t border-line px-5 py-4 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-ink-2">Subtotal</dt>
-                <dd className="font-mono">{formatMoney(order.subtotal, money, "full")}</dd>
+            <dl className={styles.orderTotals}>
+              <div className={styles.orderTotalRow}>
+                <dt className={styles.mutedText}>Subtotal</dt>
+                <dd className="mono">{formatMoney(order.subtotal, money, "full")}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-ink-2">Delivery{order.shippingMethod ? ` · ${order.shippingMethod.name}` : ""}</dt>
-                <dd className="font-mono">{order.shippingFee > 0 ? formatMoney(order.shippingFee, money, "full") : "Free"}</dd>
+              <div className={styles.orderTotalRow}>
+                <dt className={styles.mutedText}>Delivery{order.shippingMethod ? ` · ${order.shippingMethod.name}` : ""}</dt>
+                <dd className="mono">{order.shippingFee > 0 ? formatMoney(order.shippingFee, money, "full") : "Free"}</dd>
               </div>
-              <div className="flex justify-between pt-1 text-base font-semibold">
+              <div className={styles.orderTotalGrand}>
                 <dt>Total</dt>
-                <dd className="font-mono">{formatMoney(order.total, money, "full")}</dd>
+                <dd className="mono">{formatMoney(order.total, money, "full")}</dd>
               </div>
+              {settings.checkout.vatEnabled && settings.checkout.vatRate > 0 && (
+                <div className={styles.orderTotalRow}>
+                  <dt className={styles.mutedText}>
+                    Includes {settings.checkout.vatRate}% VAT
+                    {settings.checkout.vatNumber ? ` (${settings.checkout.vatNumber})` : ""}
+                  </dt>
+                  <dd className={`mono ${styles.mutedText}`}>
+                    {formatMoney(includedVatAmount(order.total, settings.checkout.vatRate), money, "full")}
+                  </dd>
+                </div>
+              )}
             </dl>
           </Panel>
 
           {order.customerNote && (
             <Panel title="Note from the customer">
-              <p className="whitespace-pre-wrap text-sm">{order.customerNote}</p>
+              <p className={styles.customerNoteText}>{order.customerNote}</p>
             </Panel>
           )}
 
           <Panel title="History">
-            <ol className="relative space-y-4 border-s border-line ps-5">
+            <ol className={styles.timeline}>
               {[...order.events].reverse().map((event, index) => (
-                <li key={`${event.at}-${index}`} className="relative">
-                  <span className="absolute -start-[1.6rem] top-1.5 size-2.5 rounded-full border-2 border-paper bg-ink-3" />
-                  <p className="text-sm font-medium">{describe(event)}</p>
-                  {event.kind === "status" && event.note && <p className="text-sm text-ink-2">“{event.note}”</p>}
-                  <p className="text-xs text-ink-3">
+                <li key={`${event.at}-${index}`} className={styles.timelineItem}>
+                  <span className={styles.timelineDot} />
+                  <p className={styles.timelineTitle}>{describe(event)}</p>
+                  {event.kind === "status" && event.note && <p className={styles.timelineNote}>“{event.note}”</p>}
+                  <p className={styles.timelineMeta}>
                     {formatDateTime(event.at)} · {event.by === "customer" ? "Customer" : event.by}
                   </p>
                 </li>
@@ -148,43 +160,38 @@ export default async function OrderDetailPage({ params }: Props) {
           </Panel>
         </div>
 
-        <div className="space-y-6">
+        <div className={styles.stack6}>
           <Panel title="Customer">
-            <p className="font-medium">{order.customer.name}</p>
-            <ul className="mt-3 space-y-2 text-sm">
+            <p className={styles.strongText}>{order.customer.name}</p>
+            <ul className={styles.customerContactList}>
               {order.customer.phone && (
-                <li className="flex items-center gap-2">
-                  <Phone size={15} className="text-ink-3" />
-                  <a href={`tel:${order.customer.phone.replace(/[^\d+]/g, "")}`} className="hover:underline" dir="ltr">
+                <li className={styles.customerContactRow}>
+                  <Phone size={15} className={styles.customerContactIcon} />
+                  <a href={`tel:${order.customer.phone.replace(/[^\d+]/g, "")}`} className={styles.customerContactLink} dir="ltr">
                     {order.customer.phone}
                   </a>
                 </li>
               )}
               {order.customer.email && (
-                <li className="flex items-center gap-2">
-                  <Mail size={15} className="text-ink-3" />
-                  <a href={`mailto:${order.customer.email}`} className="truncate hover:underline">
+                <li className={styles.customerContactRow}>
+                  <Mail size={15} className={styles.customerContactIcon} />
+                  <a href={`mailto:${order.customer.email}`} className={styles.customerContactLink}>
                     {order.customer.email}
                   </a>
                 </li>
               )}
             </ul>
             {chatUrl && (
-              <a
-                href={chatUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#127C45] hover:underline"
-              >
+              <a href={chatUrl} target="_blank" rel="noopener noreferrer" className={styles.whatsappChatLink}>
                 <WhatsAppIcon size={16} /> Message on WhatsApp
               </a>
             )}
           </Panel>
 
           <Panel title="Delivery">
-            <p className="text-sm font-medium">{order.shippingMethod?.name ?? "—"}</p>
+            <p className={styles.strongText}>{order.shippingMethod?.name ?? "—"}</p>
             {order.address ? (
-              <address className="mt-2 text-sm not-italic leading-relaxed text-ink-2">
+              <address className={styles.addressBlock}>
                 {order.address.line1}
                 <br />
                 {[order.address.postalCode, order.address.city].filter(Boolean).join(" ")}
@@ -202,16 +209,16 @@ export default async function OrderDetailPage({ params }: Props) {
                 )}
               </address>
             ) : (
-              <p className="mt-1 text-sm text-ink-2">No address needed (pickup).</p>
+              <p className={`${styles.mt2} ${styles.mutedText}`}>No address needed (pickup).</p>
             )}
           </Panel>
 
           <Panel title="Payment">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm">{PAYMENT_METHOD_LABELS[order.paymentMethod]}</p>
+            <div className={styles.paymentHeader}>
+              <p className={styles.mutedText}>{PAYMENT_METHOD_LABELS[order.paymentMethod]}</p>
               <PaymentPill order={order} />
             </div>
-            <div className="mt-4">
+            <div className={styles.mt4}>
               <PaymentStatusControl order={order} />
             </div>
           </Panel>
@@ -220,7 +227,8 @@ export default async function OrderDetailPage({ params }: Props) {
             <InternalNote order={order} />
           </Panel>
 
-          <div className="flex justify-end">
+          <div className={styles.flexEnd}>
+            <AnonymizeOrderButton order={order} />
             <DeleteOrderButton order={order} />
           </div>
         </div>

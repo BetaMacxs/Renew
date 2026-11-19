@@ -40,7 +40,7 @@ function supabaseImageHosts() {
  * Who may show these pages inside a frame. A real store: only itself
  * (X-Frame-Options: SAMEORIGIN). The public demo (PUBLIC_DEMO_MODE, read with the
  * same rule as src/server/env.ts): itself and the Profit Studio Live Demo showcase,
- * https://profitstudio.app/demo/halden — and nothing else. CSP frame-ancestors
+ * https://profitstudio.app/demo/detail-corner — and nothing else. CSP frame-ancestors
  * replaces X-Frame-Options there, because SAMEORIGIN cannot name another origin and
  * browsers ignore X-Frame-Options whenever frame-ancestors is present.
  */

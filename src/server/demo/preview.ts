@@ -116,6 +116,7 @@ export function previewAdminApi(): AdminApi {
     setCollectionProducts: denied,
     transitionOrder: denied,
     updateOrder: denied,
+    anonymizeOrder: denied,
     deleteOrder: denied,
     uploadMedia: denied,
     deleteMedia: denied,

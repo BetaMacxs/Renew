@@ -7,7 +7,7 @@ async function expectRefused(page: Page) {
 }
 
 /**
- * Public demo mode (PUBLIC_DEMO_MODE=true), as on the hosted Halden demo:
+ * Public demo mode (PUBLIC_DEMO_MODE=true), as on the hosted Detail Corner demo:
  * visitors can try the whole shop and look around the dashboard, but can't
  * change anything, see anyone's data, or leave anything behind.
  */
@@ -27,7 +27,7 @@ test("the shop says it is a demo and leads to the dashboard preview", async ({ p
 });
 
 test("a demo order goes all the way through but is never saved", async ({ page }) => {
-  await addToBag(page, "canvas-tote");
+  await addToBag(page, "premium-microfibre-wash-mitt");
   await page.goto("/checkout");
   await expect(page.getByTestId("demo-notice")).toBeVisible();
   const order = await placeOrder(page, "Pay on delivery", { name: VISITOR });
@@ -42,9 +42,9 @@ test("a demo order goes all the way through but is never saved", async ({ page }
 });
 
 test("a WhatsApp demo order shows the message and sends nothing", async ({ page }) => {
-  await addToBag(page, "pebble-bud-vase");
+  await addToBag(page, "streak-free-glass-cleaner-500ml");
   await placeOrder(page, "Order on WhatsApp", { name: VISITOR });
-  await expect(page.getByTestId("whatsapp-message")).toContainText("Pebble Bud Vase");
+  await expect(page.getByTestId("whatsapp-message")).toContainText("Streak-Free Glass Cleaner 500ml");
   await expect(page.getByTestId("open-whatsapp")).toHaveCount(0);
 });
 
@@ -63,14 +63,14 @@ test("guests can explore the whole dashboard but change nothing", async ({ brows
   await expect(page.getByText(VISITOR)).toHaveCount(0);
 
   // Editing a product looks normal, but saving is refused…
-  await page.goto("/admin/products?q=Canvas%20Tote");
-  await page.getByRole("link", { name: "Canvas Tote" }).first().click();
+  await page.goto("/admin/products?q=Premium%20Microfibre%20Wash%20Mitt");
+  await page.getByRole("link", { name: "Premium Microfibre Wash Mitt" }).first().click();
   await page.getByLabel("Price", { exact: true }).fill("1");
   await page.getByTestId("save-product").click();
   await expectRefused(page);
   // …and the shop is unchanged.
-  await page.goto("/products/canvas-tote");
-  await expect(page.getByText("$24").first()).toBeVisible();
+  await page.goto("/products/premium-microfibre-wash-mitt");
+  await expect(page.getByText("R99").first()).toBeVisible();
 
   // Settings, order actions and uploads are refused the same way.
   await page.goto("/admin/settings#store");

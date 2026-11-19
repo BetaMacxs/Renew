@@ -8,7 +8,7 @@
  * It asks which project to use, then:
  *   1. creates the database: tables, security rules, the photo bucket
  *   2. writes the project's address and keys to .env.local
- *   3. adds the 30 demo products (optional)
+ *   3. adds the 12 demo products (optional)
  *   4. creates your admin account
  *   5. turns off public sign-ups (the shop has no customer accounts)
  *
@@ -111,7 +111,7 @@ console.log("   ✓ SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and SUPABASE_SECRET_K
 
 /* -------------------------------------------------------------------- 3. demo */
 
-step(3, "The 30 demo products (you can remove them later in one click).");
+step(3, "The 12 demo products (you can remove them later in one click).");
 if (!flag("--no-demo") && (await confirm("   Add them?", true))) {
   const code = await runNode(["--conditions=react-server", "--import", "tsx", "scripts/seed.mts"]);
   if (code !== 0) fail("The demo products could not be added (see the message above).");

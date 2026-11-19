@@ -70,7 +70,7 @@ export const imageUrlSchema = z
   .trim()
   .max(1000)
   .refine(
-    (value) => value === "" || value.startsWith("/") || /^https:\/\//.test(value),
+    (value) => value === "" || (value.startsWith("/") && !value.startsWith("//")) || /^https:\/\//.test(value),
     "Invalid image address",
   );
 
@@ -231,6 +231,16 @@ export const settingsSchema = z.object({
       bankTransferInstructions: text(1000),
       /** Shown on the confirmation page, e.g. "We call within 24 hours." */
       confirmationNote: text(300),
+      /** Informational VAT-inclusive breakdown (disabled until owner enables). */
+      vatEnabled: z.boolean().default(false),
+      vatRate: z.coerce
+        .number()
+        .finite()
+        .min(0)
+        .max(50)
+        .transform((value) => Math.round(value * 100) / 100)
+        .default(15),
+      vatNumber: text(40),
     })
     .prefault({}),
 
@@ -257,7 +267,7 @@ export const settingsSchema = z.object({
 
   theme: z
     .object({
-      accent: hexColor.default("#0F4C5C"),
+      accent: hexColor.default("#C41E3A"),
       fontPairing: z.enum(FONT_PAIRINGS).default("signage"),
       corners: z.enum(CORNER_STYLES).default("soft"),
     })

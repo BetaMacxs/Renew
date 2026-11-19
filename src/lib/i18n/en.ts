@@ -136,6 +136,8 @@ export const en = {
     shipping: "Delivery",
     shippingAtCheckout: "Chosen at checkout",
     total: "Total",
+    vatIncluded: (rate: number, vatNumber?: string) =>
+      vatNumber ? `Includes ${rate}% VAT (${vatNumber})` : `Includes ${rate}% VAT`,
     checkout: "Checkout",
     viewCart: "View bag",
     freeShippingRemaining: (amount: string) => `You're ${amount} away from free delivery`,

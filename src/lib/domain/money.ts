@@ -27,6 +27,17 @@ export function sumMoney(amounts: readonly number[]): number {
   return fromCents(amounts.reduce((total, amount) => total + toCents(amount), 0));
 }
 
+/**
+ * VAT included in a VAT-inclusive total: `total * rate / (100 + rate)`.
+ * For South Africa's 15% rate this yields `total * 15 / 115` rounded to cents.
+ */
+export function includedVatAmount(total: number, ratePercent: number): number {
+  if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(ratePercent) || ratePercent <= 0) {
+    return 0;
+  }
+  return fromCents(Math.round((toCents(total) * ratePercent) / (100 + ratePercent)));
+}
+
 /** Whole percent saved, or `null` when there is no genuine discount. */
 export function discountPercent(
   price: number,

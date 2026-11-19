@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useContext, createContext, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { buttonClass } from "@/components/ui/button";
 import type { StoreSettings } from "@/lib/domain/settings";
 import { saveSettingsAction } from "@/server/actions/admin";
+import styles from "./admin.module.css";
 import { usePreview } from "./preview";
 import { useToast } from "./ui";
 
@@ -150,16 +151,18 @@ export function SettingsPanel({
     if (dirty && !busy) void onSave();
   };
   return (
-    <form id={id} onSubmit={submit} className="scroll-mt-24 rounded-[14px] border border-line bg-paper" data-testid={testId} noValidate>
-      <div className="border-b border-line px-5 py-4">
-        <h2 className="font-semibold">{title}</h2>
-        {description && <p className="mt-0.5 text-sm text-ink-3">{description}</p>}
+    <form id={id} onSubmit={submit} className={styles.panel} data-testid={testId} noValidate>
+      <div className={styles.panelHeader}>
+        <div>
+          <h2 className={styles.panelTitle}>{title}</h2>
+          {description && <p className={styles.panelDesc}>{description}</p>}
+        </div>
       </div>
-      <div className="p-5">{children}</div>
-      <div className="flex items-center justify-end gap-3 border-t border-line px-5 py-3">
+      <div className={styles.panelBody}>{children}</div>
+      <div className={styles.panelFooter}>
         {dirty && (
           <>
-            <span className="me-auto text-xs font-medium text-warning">Unsaved changes</span>
+            <span className={styles.unsavedLabel}>Unsaved changes</span>
             <button type="button" onClick={onReset} disabled={busy} className={buttonClass({ variant: "ghost", size: "sm" })}>
               Undo
             </button>

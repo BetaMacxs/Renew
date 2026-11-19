@@ -14,6 +14,7 @@ import {
   duplicateProductAction,
   saveProductAction,
 } from "@/server/actions/admin";
+import styles from "./admin.module.css";
 import { MediaManager } from "./MediaManager";
 import { usePreview } from "./preview";
 import { ConfirmButton, Notice, Panel, SelectField, TextAreaField, TextField, Toggle, useToast } from "./ui";
@@ -54,7 +55,6 @@ type Draft = {
 };
 
 const money = (value: number | null) => (value === null ? "" : String(value));
-
 
 /** Keeps a URL handle typeable: lowercase, hyphens for spaces, nothing else. */
 function toDraft(product: Product | null): Draft {
@@ -284,18 +284,18 @@ export function ProductEditor({
   );
 
   return (
-    <div className="pb-24">
+    <div className={styles.editorWrap}>
       {/* Header with the save button, always within reach. */}
-      <div className="sticky top-14 z-20 -mx-4 mb-6 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:top-0">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link href="/admin/products" className="grid size-9 shrink-0 place-items-center rounded-full hover:bg-paper" aria-label="Back to products">
+      <div className={styles.stickyBar}>
+        <div className={styles.stickyBarInner}>
+          <div className={styles.stickyBarLead}>
+            <Link href="/admin/products" className={styles.stickyBackBtn} aria-label="Back to products">
               <ArrowLeft size={18} />
             </Link>
-            <h1 className="truncate text-lg font-semibold">{draft.name || (isNew ? "New product" : "Untitled product")}</h1>
-            {dirty && <span className="hidden shrink-0 text-xs text-ink-3 sm:inline">Unsaved changes</span>}
+            <h1 className={styles.stickyTitle}>{draft.name || (isNew ? "New product" : "Untitled product")}</h1>
+            {dirty && <span className={styles.stickyUnsaved}>Unsaved changes</span>}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className={styles.stickyActions}>
             {dirty && !isNew && (
               <button type="button" onClick={() => setDraft(JSON.parse(saved))} className={buttonClass({ variant: "ghost", size: "sm" })}>
                 Discard
@@ -309,17 +309,17 @@ export function ProductEditor({
       </div>
 
       {formError && (
-        <div className="mb-6">
+        <div className={styles.mb6}>
           <Notice tone="danger" title={formError}>
             {Object.keys(errors).length > 0 && "Check the fields marked in red."}
           </Notice>
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="space-y-6">
+      <div className={styles.editorGrid}>
+        <div className={styles.stack6}>
           <Panel title="Product">
-            <div className="grid gap-4">
+            <div className={styles.gridGap4}>
               <TextField
                 label="Name"
                 value={draft.name}
@@ -352,21 +352,25 @@ export function ProductEditor({
           </Panel>
 
           <Panel title="Photos" description="Up to 12. Drag in several at once.">
-            <MediaManager images={draft.images} onChange={(images) => {
-              const ids = new Set(images.map((image) => image.id));
-              setDraft((current) => ({
-                ...current,
-                images,
-                variants: current.variants.map((variant) =>
-                  variant.imageId && !ids.has(variant.imageId) ? { ...variant, imageId: null } : variant,
-                ),
-              }));
-            }} error={errors.images} />
+            <MediaManager
+              images={draft.images}
+              onChange={(images) => {
+                const ids = new Set(images.map((image) => image.id));
+                setDraft((current) => ({
+                  ...current,
+                  images,
+                  variants: current.variants.map((variant) =>
+                    variant.imageId && !ids.has(variant.imageId) ? { ...variant, imageId: null } : variant,
+                  ),
+                }));
+              }}
+              error={errors.images}
+            />
           </Panel>
 
           {!hasOptions && (
             <Panel title="Price and stock">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className={styles.grid2Sm}>
                 {priceField(0, "price", "Price")}
                 {priceField(0, "compareAtPrice", "Compare-at price", "The old price, if this is on sale. Shown crossed out.")}
                 <TextField
@@ -377,7 +381,7 @@ export function ProductEditor({
                   hint="Your own reference code."
                 />
               </div>
-              <div className="mt-6 space-y-4 border-t border-line pt-5">
+              <div className={styles.dividerSection}>
                 <Toggle
                   checked={draft.trackInventory}
                   onChange={(value) => update("trackInventory", value)}
@@ -390,7 +394,7 @@ export function ProductEditor({
                     inputMode="numeric"
                     value={draft.variants[0]?.stock ?? "0"}
                     onChange={(event) => setVariant(0, { stock: event.target.value.replace(/\D/g, "") })}
-                    className="max-w-48"
+                    className={styles.maxW48}
                     error={errors["variants.0.stock"]}
                   />
                 )}
@@ -410,13 +414,13 @@ export function ProductEditor({
           >
             <OptionsEditor options={draft.options} onChange={setOptions} />
             {problems.length > 0 && (
-              <ul className="mt-3 space-y-1 text-xs font-medium text-danger">
+              <ul className={styles.optionProblems}>
                 {problems.map((problem) => (
                   <li key={problem}>{problem}</li>
                 ))}
               </ul>
             )}
-            {errors.options && <p className="mt-2 text-xs font-medium text-danger">{errors.options}</p>}
+            {errors.options && <p className={styles.fieldError}>{errors.options}</p>}
           </Panel>
 
           {hasOptions && problems.length === 0 && (
@@ -425,7 +429,7 @@ export function ProductEditor({
               description="Set the price, stock and photo for each combination."
               padded={false}
             >
-              <div className="space-y-4 border-b border-line p-5">
+              <div className={styles.variantTopBox}>
                 <Toggle
                   checked={draft.trackInventory}
                   onChange={(value) => update("trackInventory", value)}
@@ -439,65 +443,65 @@ export function ProductEditor({
                   }
                 />
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[40rem] text-sm">
-                  <thead className="border-b border-line text-xs text-ink-3">
+              <div className={styles.tableWrap}>
+                <table className={styles.variantsTable}>
+                  <thead className={styles.tableHead}>
                     <tr>
-                      <th scope="col" className="px-5 py-2.5 text-start font-medium">Variant</th>
-                      <th scope="col" className="px-2 py-2.5 text-start font-medium">Price</th>
-                      <th scope="col" className="px-2 py-2.5 text-start font-medium">Was</th>
-                      {draft.trackInventory && <th scope="col" className="px-2 py-2.5 text-start font-medium">Stock</th>}
-                      <th scope="col" className="px-2 py-2.5 text-start font-medium">SKU</th>
-                      {draft.images.length > 0 && <th scope="col" className="px-2 py-2.5 text-start font-medium">Photo</th>}
-                      <th scope="col" className="px-5 py-2.5 text-end font-medium">On sale</th>
+                      <th scope="col" className={styles.variantThFirst}>Variant</th>
+                      <th scope="col" className={styles.variantThMid}>Price</th>
+                      <th scope="col" className={styles.variantThMid}>Was</th>
+                      {draft.trackInventory && <th scope="col" className={styles.variantThMid}>Stock</th>}
+                      <th scope="col" className={styles.variantThMid}>SKU</th>
+                      {draft.images.length > 0 && <th scope="col" className={styles.variantThMid}>Photo</th>}
+                      <th scope="col" className={styles.variantThLast}>On sale</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-line">
+                  <tbody className={styles.dividerTable}>
                     {draft.variants.map((variant, index) => (
                       <tr key={variant.id}>
-                        <td className="px-5 py-2.5 font-medium">{variant.optionValues.join(" / ")}</td>
-                        <td className="px-2 py-2.5">
+                        <td className={styles.variantTdFirst}>{variant.optionValues.join(" / ")}</td>
+                        <td className={styles.variantTdMid}>
                           <CellInput
                             value={variant.price}
                             invalid={Boolean(errors[`variants.${index}.price`])}
                             onChange={(value) => setVariant(index, { price: value.replace(",", ".").replace(/[^\d.]/g, "") })}
                             label={`Price for ${variant.optionValues.join(" / ")}`}
-                            width="w-24"
+                            widthClass={styles.cellW24}
                           />
                         </td>
-                        <td className="px-2 py-2.5">
+                        <td className={styles.variantTdMid}>
                           <CellInput
                             value={variant.compareAtPrice}
                             onChange={(value) => setVariant(index, { compareAtPrice: value.replace(",", ".").replace(/[^\d.]/g, "") })}
                             label={`Compare-at price for ${variant.optionValues.join(" / ")}`}
-                            width="w-24"
+                            widthClass={styles.cellW24}
                           />
                         </td>
                         {draft.trackInventory && (
-                          <td className="px-2 py-2.5">
+                          <td className={styles.variantTdMid}>
                             <CellInput
                               value={variant.stock}
                               onChange={(value) => setVariant(index, { stock: value.replace(/\D/g, "") })}
                               label={`Stock for ${variant.optionValues.join(" / ")}`}
-                              width="w-20"
+                              widthClass={styles.cellW20}
                             />
                           </td>
                         )}
-                        <td className="px-2 py-2.5">
+                        <td className={styles.variantTdMid}>
                           <CellInput
                             value={variant.sku}
                             onChange={(value) => setVariant(index, { sku: value })}
                             label={`SKU for ${variant.optionValues.join(" / ")}`}
-                            width="w-32"
+                            widthClass={styles.cellW32}
                           />
                         </td>
                         {draft.images.length > 0 && (
-                          <td className="px-2 py-2.5">
+                          <td className={styles.variantTdMid}>
                             <select
                               value={variant.imageId ?? ""}
                               onChange={(event) => setVariant(index, { imageId: event.target.value || null })}
                               aria-label={`Photo for ${variant.optionValues.join(" / ")}`}
-                              className="h-9 rounded-[8px] border border-line-strong bg-paper px-2 text-sm"
+                              className={styles.variantSelect}
                             >
                               <option value="">Default</option>
                               {draft.images.map((image, position) => (
@@ -508,13 +512,13 @@ export function ProductEditor({
                             </select>
                           </td>
                         )}
-                        <td className="px-5 py-2.5 text-end">
+                        <td className={styles.variantTdLast}>
                           <input
                             type="checkbox"
                             checked={variant.available}
                             onChange={(event) => setVariant(index, { available: event.target.checked })}
                             aria-label={`${variant.optionValues.join(" / ")} available to order`}
-                            className="size-4 accent-[var(--accent)]"
+                            className={styles.checkbox}
                           />
                         </td>
                       </tr>
@@ -530,17 +534,17 @@ export function ProductEditor({
           </Panel>
 
           <Panel title="Search engines" description="How this product appears on Google and when shared.">
-            <div className="grid gap-4">
+            <div className={styles.gridGap4}>
               <TextField
                 label="URL handle"
                 prefix="/products/"
+                prefixVariant="products"
                 value={draft.slug}
                 error={errors.slug}
                 onChange={(event) => {
                   update("slug", slugInput(event.target.value));
                   update("slugTouched", true);
                 }}
-                className="[&_input]:ps-24"
                 hint={!isNew ? "Changing it breaks links people already shared." : undefined}
               />
               <TextField
@@ -564,9 +568,9 @@ export function ProductEditor({
           </Panel>
         </div>
 
-        <div className="space-y-6">
+        <div className={styles.stack6}>
           <Panel title="Status">
-            <div className="grid gap-2" role="radiogroup" aria-label="Status">
+            <div className={styles.stack2} role="radiogroup" aria-label="Status">
               {(
                 [
                   ["active", "Active", "Visible and buyable in the store."],
@@ -576,18 +580,18 @@ export function ProductEditor({
               ).map(([value, label, text]) => (
                 <label
                   key={value}
-                  className={`flex cursor-pointer gap-3 rounded-[10px] border p-3 ${draft.status === value ? "border-ink bg-canvas" : "border-line"}`}
+                  className={`${styles.statusOption} ${draft.status === value ? styles.statusOptionSelected : ""}`}
                 >
                   <input
                     type="radio"
                     name="status"
                     checked={draft.status === value}
                     onChange={() => update("status", value)}
-                    className="mt-1 size-4 accent-[var(--accent)]"
+                    className={styles.statusRadio}
                   />
                   <span>
-                    <span className="block text-sm font-medium">{label}</span>
-                    <span className="block text-xs text-ink-3">{text}</span>
+                    <span className={styles.statusTitle}>{label}</span>
+                    <span className={styles.statusDesc}>{text}</span>
                   </span>
                 </label>
               ))}
@@ -595,7 +599,7 @@ export function ProductEditor({
           </Panel>
 
           <Panel title="Organization">
-            <div className="space-y-5">
+            <div className={styles.stack5}>
               <SelectField
                 label="Category"
                 value={draft.categoryId ?? ""}
@@ -612,10 +616,10 @@ export function ProductEditor({
               </SelectField>
               {collections.length > 0 && (
                 <fieldset>
-                  <legend className="mb-1.5 text-sm font-medium">Collections</legend>
-                  <div className="space-y-1.5">
+                  <legend className={styles.fieldsetLegend}>Collections</legend>
+                  <div className={styles.stack2}>
                     {collections.map((collection) => (
-                      <label key={collection.id} className="flex items-center gap-2.5 text-sm">
+                      <label key={collection.id} className={styles.collectionCheckRow}>
                         <input
                           type="checkbox"
                           checked={draft.collectionIds.includes(collection.id)}
@@ -627,7 +631,7 @@ export function ProductEditor({
                                 : draft.collectionIds.filter((id) => id !== collection.id),
                             )
                           }
-                          className="size-4 accent-[var(--accent)]"
+                          className={styles.checkbox}
                         />
                         {collection.name}
                       </label>
@@ -664,13 +668,13 @@ function CellInput({
   value,
   onChange,
   label,
-  width,
+  widthClass,
   invalid = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   label: string;
-  width: string;
+  widthClass: string;
   invalid?: boolean;
 }) {
   return (
@@ -680,7 +684,7 @@ function CellInput({
       aria-label={label}
       aria-invalid={invalid || undefined}
       inputMode="decimal"
-      className={`h-9 rounded-[8px] border bg-paper px-2.5 text-sm outline-none focus:border-ink ${width} ${invalid ? "border-danger" : "border-line-strong"}`}
+      className={`${styles.cellInput} ${widthClass} ${invalid ? styles.cellInputInvalid : ""}`}
     />
   );
 }
@@ -688,16 +692,16 @@ function CellInput({
 function BulkPrice({ currency, onApply }: { currency: string; onApply: (price: string) => void }) {
   const [value, setValue] = useState("");
   return (
-    <div className="flex items-end gap-2">
+    <div className={styles.bulkPriceRow}>
       <TextField
         label="Same price for every variant"
         inputMode="decimal"
         suffix={currency}
         value={value}
         onChange={(event) => setValue(event.target.value.replace(",", ".").replace(/[^\d.]/g, ""))}
-        className="max-w-56"
+        className={styles.maxW56}
       />
-      <button type="button" disabled={!value} onClick={() => onApply(value)} className={buttonClass({ variant: "outline", size: "sm", className: "mb-0.5 h-10" })}>
+      <button type="button" disabled={!value} onClick={() => onApply(value)} className={buttonClass({ variant: "outline", size: "sm", className: styles.bulkApplyBtn })}>
         Apply to all
       </button>
     </div>
@@ -707,7 +711,7 @@ function BulkPrice({ currency, onApply }: { currency: string; onApply: (price: s
 function OptionsEditor({ options, onChange }: { options: ProductOption[]; onChange: (options: ProductOption[]) => void }) {
   const combos = countCombinations(options);
   return (
-    <div className="space-y-4">
+    <div className={styles.stack4}>
       {options.map((option, index) => (
         <OptionRow
           key={index}
@@ -716,7 +720,7 @@ function OptionsEditor({ options, onChange }: { options: ProductOption[]; onChan
           onRemove={() => onChange(options.filter((_, position) => position !== index))}
         />
       ))}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className={styles.optionsFooter}>
         {options.length < MAX_OPTIONS && (
           <button
             type="button"
@@ -735,7 +739,7 @@ function OptionsEditor({ options, onChange }: { options: ProductOption[]; onChan
           </button>
         )}
         {options.length > 0 && (
-          <p className={`text-xs ${combos > MAX_VARIANTS ? "font-medium text-danger" : "text-ink-3"}`}>
+          <p className={combos > MAX_VARIANTS ? styles.fieldError : styles.fieldHint}>
             {combos} {combos === 1 ? "variant" : "variants"} · up to {MAX_VARIANTS}
           </p>
         )}
@@ -773,18 +777,18 @@ function OptionRow({
   };
 
   return (
-    <div className="rounded-[12px] border border-line p-4">
-      <div className="flex items-end gap-3">
-        <GripVertical size={18} className="mb-2.5 hidden shrink-0 text-ink-3 sm:block" aria-hidden="true" />
+    <div className={styles.optionRowCard}>
+      <div className={styles.optionRowHeader}>
+        <GripVertical size={18} className={styles.optionGrip} aria-hidden="true" />
         <TextField
           label="Option name"
           value={option.name}
           list="option-names"
           onChange={(event) => onChange({ ...option, name: event.target.value })}
-          className="flex-1"
+          className={styles.optionNameField}
           maxLength={30}
         />
-        <button type="button" onClick={onRemove} className={buttonClass({ variant: "ghost", size: "sm", className: "mb-0.5 h-10 text-danger" })}>
+        <button type="button" onClick={onRemove} className={buttonClass({ variant: "ghost", size: "sm", className: styles.optionRemoveBtn })}>
           <Trash2 size={15} /> Remove
         </button>
         <datalist id="option-names">
@@ -793,9 +797,9 @@ function OptionRow({
           ))}
         </datalist>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className={styles.optionValuesRow}>
         {option.values.map((entry, index) => (
-          <span key={entry.label} className="inline-flex h-9 items-center gap-2 rounded-full border border-line-strong bg-paper pe-1.5 ps-3 text-sm">
+          <span key={entry.label} className={styles.optionChip}>
             {swatches && (
               <input
                 type="color"
@@ -809,21 +813,21 @@ function OptionRow({
                   })
                 }
                 aria-label={`Colour for ${entry.label}`}
-                className="size-5 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-black/10 [&::-webkit-color-swatch-wrapper]:p-0"
+                className={styles.swatchPicker}
               />
             )}
             {entry.label}
             <button
               type="button"
               onClick={() => onChange({ ...option, values: option.values.filter((_, position) => position !== index) })}
-              className="grid size-6 place-items-center rounded-full text-ink-3 hover:bg-canvas hover:text-danger"
+              className={styles.optionChipRemove}
               aria-label={`Remove ${entry.label}`}
             >
               <X size={14} />
             </button>
           </span>
         ))}
-        <span className="inline-flex items-center gap-1">
+        <span className={styles.optionAddGroup}>
           <input
             ref={input}
             value={value}
@@ -836,14 +840,14 @@ function OptionRow({
             }}
             placeholder={option.values.length ? "Add another" : "e.g. S, M, L"}
             aria-label={`Add a value to ${option.name || "this option"}`}
-            className="h-9 w-40 rounded-full border border-dashed border-line-strong bg-transparent px-3 text-sm outline-none focus:border-ink"
+            className={styles.optionAddInput}
           />
-          <button type="button" onClick={add} className="grid size-9 place-items-center rounded-full hover:bg-canvas" aria-label="Add value">
+          <button type="button" onClick={add} className={styles.optionAddBtn} aria-label="Add value">
             <Plus size={16} />
           </button>
         </span>
       </div>
-      <label className="mt-3 flex items-center gap-2 text-xs text-ink-2">
+      <label className={styles.optionSwatchToggle}>
         <input
           type="checkbox"
           checked={swatches}
@@ -856,7 +860,7 @@ function OptionRow({
               })),
             })
           }
-          className="size-3.5 accent-[var(--accent)]"
+          className={styles.checkboxSmall}
         />
         Show as colour swatches
       </label>
@@ -872,16 +876,16 @@ function SpecsEditor({
   onChange: (specs: Draft["specs"]) => void;
 }) {
   return (
-    <div className="space-y-2">
+    <div className={styles.stack2}>
       {specs.map((spec, index) => (
-        <div key={spec.id} className="flex items-center gap-2">
+        <div key={spec.id} className={styles.specRow}>
           <input
             value={spec.label}
             onChange={(event) => onChange(specs.map((candidate, position) => (position === index ? { ...candidate, label: event.target.value } : candidate)))}
             placeholder="Label, e.g. Material"
             aria-label={`Detail ${index + 1} label`}
             maxLength={40}
-            className="h-10 w-2/5 rounded-[10px] border border-line-strong bg-paper px-3 text-sm outline-none focus:border-ink"
+            className={styles.specLabelInput}
           />
           <input
             value={spec.value}
@@ -889,26 +893,28 @@ function SpecsEditor({
             placeholder="Value, e.g. Organic cotton"
             aria-label={`Detail ${index + 1} value`}
             maxLength={200}
-            className="h-10 flex-1 rounded-[10px] border border-line-strong bg-paper px-3 text-sm outline-none focus:border-ink"
+            className={styles.specValueInput}
           />
           <button
             type="button"
             onClick={() => onChange(specs.filter((_, position) => position !== index))}
-            className="grid size-10 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-canvas hover:text-danger"
+            className={styles.specRemoveBtn}
             aria-label={`Remove detail ${index + 1}`}
           >
             <Trash2 size={16} />
           </button>
         </div>
       ))}
-      <button
-        type="button"
-        onClick={() => onChange([...specs, { id: uid(), label: "", value: "" }])}
-        className={buttonClass({ variant: "outline", size: "sm" })}
-        disabled={specs.length >= 20}
-      >
-        <Plus size={16} /> Add a detail
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={() => onChange([...specs, { id: uid(), label: "", value: "" }])}
+          className={buttonClass({ variant: "outline", size: "sm" })}
+          disabled={specs.length >= 20}
+        >
+          <Plus size={16} /> Add a detail
+        </button>
+      </div>
     </div>
   );
 }
@@ -918,7 +924,7 @@ function ProductDangerZone({ product }: { product: Product }): ReactNode {
   const toast = useToast();
   return (
     <Panel title="More">
-      <div className="flex flex-col items-start gap-2">
+      <div className={styles.dangerZoneList}>
         {product.status === "active" && (
           <Link href={`/products/${product.slug}`} target="_blank" className={buttonClass({ variant: "ghost", size: "sm" })}>
             <ExternalLink size={15} /> View in store
@@ -940,7 +946,7 @@ function ProductDangerZone({ product }: { product: Product }): ReactNode {
         <ConfirmButton
           variant="ghost"
           size="sm"
-          className="text-danger"
+          className={styles.dangerTextBtn}
           title={`Delete “${product.name}”?`}
           description={
             <>

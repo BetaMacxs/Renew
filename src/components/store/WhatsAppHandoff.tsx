@@ -5,6 +5,7 @@ import { useState } from "react";
 import { WhatsAppIcon } from "@/components/icons/brands";
 import { buttonClass } from "@/components/ui/button";
 import { useStore } from "./StoreProvider";
+import styles from "./store.module.css";
 
 /**
  * The last step of a WhatsApp checkout. The order is only *prepared* at this
@@ -48,22 +49,22 @@ export function WhatsAppHandoff({
   return (
     <div>
       {/* The message, as it will appear in the chat. */}
-      <div className="rounded-card bg-[#efeae2] p-4 sm:p-6">
-        <div className="ms-auto max-w-md rounded-2xl rounded-se-sm bg-[#d9fdd3] px-4 py-3 text-[0.92rem] leading-relaxed text-[#111b21] shadow-sm">
-          <pre className="whitespace-pre-wrap break-words font-sans" data-testid="whatsapp-message">
+      <div className={styles.waPreviewBox}>
+        <div className={styles.waBubble}>
+          <pre className={styles.waPre} data-testid="whatsapp-message">
             {message}
           </pre>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <div className={styles.waActions}>
         {url ? (
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={recordOpened}
-            className={buttonClass({ variant: "whatsapp", size: "lg", className: "sm:flex-1" })}
+            className={buttonClass({ variant: "whatsapp", size: "lg", className: styles.waOpenBtn })}
             data-testid="open-whatsapp"
           >
             <WhatsAppIcon size={20} />
@@ -75,7 +76,7 @@ export function WhatsAppHandoff({
           {copied ? t.order.copied : t.order.copyMessage}
         </button>
       </div>
-      {url && <p className="mt-3 text-sm text-ink-3">{t.order.whatsappSentHint}</p>}
+      {url && <p className={styles.waHint}>{t.order.whatsappSentHint}</p>}
     </div>
   );
 }

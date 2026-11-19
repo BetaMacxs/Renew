@@ -10,12 +10,14 @@ import { buttonClass } from "@/components/ui/button";
 import { clearCart, useCartLines } from "@/lib/cart/store";
 import { useCartQuote } from "@/lib/cart/useCartQuote";
 import type { CartQuote } from "@/lib/domain/cart";
+import { includedVatAmount } from "@/lib/domain/money";
 import type { CheckoutErrors } from "@/lib/domain/checkout";
 import type { CheckoutMethod } from "@/lib/domain/settings";
 import { placeOrderAction } from "@/server/actions/storefront";
 import { CartLines } from "./CartLines";
 import { Receipt, ReceiptLine, ReceiptRule } from "./Receipt";
 import { useStore } from "./StoreProvider";
+import styles from "./store.module.css";
 
 /**
  * Checkout: how to order, who you are, where it goes — then one button whose
@@ -66,14 +68,14 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
   };
 
   if (!hydrated || (lines.length > 0 && !quote)) {
-    return <p className="py-24 text-center text-sm text-ink-3">{t.common.loading}</p>;
+    return <p className={styles.cartPageStatus}>{t.common.loading}</p>;
   }
 
   if (lines.length === 0 || !quote) {
     return (
-      <div className="py-24 text-center">
-        <h2 className="text-xl font-semibold">{t.checkout.emptyTitle}</h2>
-        <Link href="/shop" className={buttonClass({ variant: "dark", className: "mt-6" })}>
+      <div className={styles.checkoutEmpty}>
+        <h2 className={styles.checkoutEmptyTitle}>{t.checkout.emptyTitle}</h2>
+        <Link href="/shop" className={buttonClass({ variant: "dark", className: styles.checkoutEmptyBtn })}>
           {t.common.continueShopping}
         </Link>
       </div>
@@ -81,7 +83,7 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
   }
 
   if (!method) {
-    return <p className="py-24 text-center text-ink-2">{t.checkout.noMethods}</p>;
+    return <p className={styles.checkoutNoMethods}>{t.checkout.noMethods}</p>;
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -136,22 +138,20 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
   const phoneOptional = method === "whatsapp";
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-14">
-      <div className="space-y-10">
+    <form onSubmit={submit} noValidate className={styles.checkoutForm}>
+      <div className={styles.checkoutSteps}>
         {notice && (
-          <p role="alert" className="rounded-[var(--radius-control)] bg-warning-soft px-4 py-3 text-sm font-medium text-warning">
+          <p role="alert" className={styles.checkoutAlert}>
             {notice}
           </p>
         )}
 
         <Step number={1} title={t.checkout.howToOrder}>
-          <div className="grid gap-3">
+          <div className={styles.choiceList}>
             {methods.map((option) => (
               <label
                 key={option}
-                className={`flex cursor-pointer gap-4 rounded-card border p-4 transition-colors ${
-                  method === option ? "border-ink bg-canvas" : "border-line hover:border-ink-3"
-                }`}
+                className={`${styles.choiceCard} ${method === option ? styles.choiceCardActive : ""}`.trim()}
               >
                 <input
                   type="radio"
@@ -159,14 +159,14 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
                   value={option}
                   checked={method === option}
                   onChange={() => setMethod(option)}
-                  className="mt-1 size-4 accent-[var(--accent)]"
+                  className={styles.choiceRadio}
                 />
-                <span className="mt-0.5 text-ink">{methodIcon[option]}</span>
+                <span className={styles.choiceIcon}>{methodIcon[option]}</span>
                 <span>
-                  <span className="block font-semibold">{t.checkout.methods[option].title}</span>
-                  <span className="block text-sm text-ink-2">{t.checkout.methods[option].text}</span>
+                  <span className={styles.choiceTitle}>{t.checkout.methods[option].title}</span>
+                  <span className={styles.choiceText}>{t.checkout.methods[option].text}</span>
                   {option === "whatsapp" && !config.whatsapp.configured && method === "whatsapp" && (
-                    <span className="mt-2 block text-xs font-medium text-warning">{t.checkout.whatsappDemo}</span>
+                    <span className={styles.choiceWarn}>{t.checkout.whatsappDemo}</span>
                   )}
                 </span>
               </label>
@@ -176,8 +176,8 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
         </Step>
 
         <Step number={2} title={t.checkout.contact}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t.checkout.name} error={errors.name && t.errors[errors.name]} className="sm:col-span-2">
+          <div className={styles.fieldGrid2}>
+            <Field label={t.checkout.name} error={errors.name && t.errors[errors.name]} className={styles.fieldSpan2}>
               <input name="name" autoComplete="name" value={fields.name} onChange={set("name")} required />
             </Field>
             <Field
@@ -195,18 +195,17 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
         </Step>
 
         <Step number={3} title={t.checkout.delivery}>
-          <div className="grid gap-3">
+          <div className={styles.choiceList}>
             {config.shippingMethods.map((option) => {
               const waived =
                 option.price > 0 &&
                 config.freeShippingThreshold !== null &&
+                config.freeShippingThreshold > 0 &&
                 quote.subtotal >= config.freeShippingThreshold;
               return (
                 <label
                   key={option.id}
-                  className={`flex cursor-pointer items-start gap-4 rounded-card border p-4 transition-colors ${
-                    shippingId === option.id ? "border-ink bg-canvas" : "border-line hover:border-ink-3"
-                  }`}
+                  className={`${styles.choiceCard} ${shippingId === option.id ? styles.choiceCardActive : ""}`.trim()}
                 >
                   <input
                     type="radio"
@@ -214,15 +213,15 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
                     value={option.id}
                     checked={shippingId === option.id}
                     onChange={() => setShippingId(option.id)}
-                    className="mt-1 size-4 accent-[var(--accent)]"
+                    className={styles.choiceRadio}
                   />
-                  <span className="flex-1">
-                    <span className="block font-semibold">{option.name}</span>
-                    {option.description && <span className="block text-sm text-ink-2">{option.description}</span>}
+                  <span className={styles.choiceBody}>
+                    <span className={styles.choiceTitle}>{option.name}</span>
+                    {option.description && <span className={styles.choiceText}>{option.description}</span>}
                   </span>
-                  <span className="price text-sm font-semibold">
+                  <span className={`price ${styles.choicePrice}`}>
                     {option.price === 0 || waived ? t.checkout.free : money(option.price)}
-                    {waived && <s className="ms-2 font-normal text-ink-3">{money(option.price)}</s>}
+                    {waived && <s className={styles.choiceStrike}>{money(option.price)}</s>}
                   </span>
                 </label>
               );
@@ -231,8 +230,8 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
           {errors.shippingMethodId && <FieldError message={t.errors[errors.shippingMethodId]} />}
 
           {shipping?.requiresAddress && (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Field label={t.checkout.line1} error={errors.line1 && t.errors[errors.line1]} className="sm:col-span-2">
+            <div className={styles.addressFields}>
+              <Field label={t.checkout.line1} error={errors.line1 && t.errors[errors.line1]} className={styles.fieldSpan2}>
                 <input name="line1" autoComplete="street-address" value={fields.line1} onChange={set("line1")} />
               </Field>
               <Field label={t.checkout.city} error={errors.city && t.errors[errors.city]}>
@@ -250,12 +249,11 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
             </div>
           )}
 
-          <Field label={t.checkout.note} optional={t.common.optional} error={errors.note && t.errors[errors.note]} className="mt-6">
+          <Field label={t.checkout.note} optional={t.common.optional} error={errors.note && t.errors[errors.note]} className={styles.noteField}>
             <textarea name="note" rows={3} placeholder={t.checkout.notePlaceholder} value={fields.note} onChange={set("note")} />
           </Field>
 
           {/* Left empty by people; bots that fill every field give themselves away. */}
-          {/* Visually hidden in place: an off-screen offset would scroll sideways in right-to-left languages. */}
           <div aria-hidden="true" className="sr-only">
             <label>
               Company
@@ -265,24 +263,24 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
         </Step>
       </div>
 
-      <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className={styles.checkoutSummaryCol}>
         <Receipt title={t.checkout.summary}>
-          <div className={`transition-opacity ${loading ? "opacity-60" : ""}`}>
+          <div className={`${styles.cartContent} ${loading ? styles.cartContentLoading : ""}`.trim()}>
             {quote.hasIssues && <CartLines quote={quote} compact />}
             {!quote.hasIssues &&
               quote.lines.map((line) => (
-                <div key={line.key} className="flex items-center gap-3 py-2">
-                  <span className="relative size-12 shrink-0 overflow-hidden rounded-[var(--radius-control)] bg-tile">
-                    {line.imageUrl && <Image src={line.imageUrl} alt="" fill sizes="48px" className="object-cover" />}
-                    <span className="price absolute -end-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-ink px-1 text-[0.65rem] leading-5 text-paper">
+                <div key={line.key} className={styles.summaryItemRow}>
+                  <span className={styles.summaryItemThumb}>
+                    {line.imageUrl && <Image src={line.imageUrl} alt="" fill sizes="48px" className={styles.imgCover} />}
+                    <span className={`price ${styles.summaryItemQty}`}>
                       {line.quantity}
                     </span>
                   </span>
-                  <span className="min-w-0 flex-1 text-sm">
-                    <span className="block truncate font-medium">{line.name}</span>
-                    {line.variantLabel && <span className="block text-xs text-ink-3">{line.variantLabel}</span>}
+                  <span className={styles.summaryItemText}>
+                    <span className={styles.summaryItemName}>{line.name}</span>
+                    {line.variantLabel && <span className={styles.summaryItemVariant}>{line.variantLabel}</span>}
                   </span>
-                  <span className="font-mono text-sm tabular-nums">{money(line.lineTotal, "full")}</span>
+                  <span className={`mono ${styles.summaryItemPrice}`}>{money(line.lineTotal, "full")}</span>
                 </div>
               ))}
             <ReceiptRule />
@@ -293,6 +291,13 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
             />
             <ReceiptRule />
             <ReceiptLine label={t.cart.total} amount={money(quote.total, "full")} strong />
+            {config.vat.enabled && config.vat.rate > 0 && (
+              <ReceiptLine
+                label={t.cart.vatIncluded(config.vat.rate, config.vat.number || undefined)}
+                amount={money(includedVatAmount(quote.total, config.vat.rate), "full")}
+                muted
+              />
+            )}
           </div>
         </Receipt>
 
@@ -304,16 +309,16 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
             variant: method === "whatsapp" ? "whatsapp" : "primary",
             size: "lg",
             full: true,
-            className: "mt-5",
+            className: styles.checkoutSubmitBtn,
           })}
           data-testid="place-order"
         >
           {method === "whatsapp" && <WhatsAppIcon size={19} />}
           {submitting ? t.checkout.submitting : t.checkout.submit[method]}
         </button>
-        <p className="mt-3 text-sm leading-relaxed text-ink-2">{t.checkout.nextStep[method]}</p>
-        <p className="mt-3 flex items-start gap-2 text-xs text-ink-3">
-          <Lock size={13} className="mt-0.5 shrink-0" />
+        <p className={styles.checkoutNextStep}>{t.checkout.nextStep[method]}</p>
+        <p className={styles.checkoutPrivacy}>
+          <Lock size={13} className={styles.checkoutPrivacyIcon} />
           {t.checkout.privacy}
         </p>
       </div>
@@ -324,8 +329,8 @@ export function CheckoutForm({ formToken }: { formToken: string }) {
 function Step({ number, title, children }: { number: number; title: string; children: ReactNode }) {
   return (
     <section>
-      <h2 className="mb-5 flex items-center gap-3 text-lg font-semibold">
-        <span className="price grid size-7 place-items-center rounded-full bg-ink text-xs text-paper" aria-hidden="true">
+      <h2 className={styles.stepTitle}>
+        <span className={`price ${styles.stepBadge}`} aria-hidden="true">
           {number}
         </span>
         {title}
@@ -348,7 +353,7 @@ function Field({
   optional?: string;
   error?: string;
   className?: string;
-  children: React.ReactElement<React.InputHTMLAttributes<HTMLInputElement>>;
+  children: React.ReactElement<React.InputHTMLAttributes<HTMLInputElement> | React.TextareaHTMLAttributes<HTMLTextAreaElement>>;
 }) {
   // Not derived from the label: in Arabic every label would map to the same id.
   const id = useId();
@@ -356,19 +361,17 @@ function Field({
     id,
     "aria-invalid": error ? true : undefined,
     "aria-describedby": error ? `${id}-error` : hint ? `${id}-hint` : undefined,
-    className: `w-full rounded-[var(--radius-control)] border bg-paper px-3.5 py-3 text-[0.95rem] outline-none transition-colors placeholder:text-ink-3 focus:border-ink ${
-      error ? "border-danger" : "border-line-strong"
-    }`,
+    className: `${styles.fieldInput} ${error ? styles.fieldInputError : ""}`.trim(),
   });
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1.5 flex items-baseline justify-between text-sm font-medium">
+      <label htmlFor={id} className={styles.fieldLabel}>
         {label}
-        {optional && <span className="text-xs font-normal text-ink-3">{optional}</span>}
+        {optional && <span className={styles.fieldOptional}>{optional}</span>}
       </label>
       {control}
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-ink-3">
+        <p id={`${id}-hint`} className={styles.fieldHint}>
           {hint}
         </p>
       )}
@@ -379,7 +382,7 @@ function Field({
 
 function FieldError({ message, id }: { message: string; id?: string }) {
   return (
-    <p id={id} className="mt-1.5 text-sm font-medium text-danger">
+    <p id={id} className={styles.fieldError}>
       {message}
     </p>
   );

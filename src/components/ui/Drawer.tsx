@@ -16,7 +16,7 @@ export function Drawer({
   closeLabel,
   footer,
   children,
-  widthClass = "w-[min(100vw,26rem)]",
+  widthClass = "",
 }: {
   open: boolean;
   onClose: () => void;
@@ -54,24 +54,17 @@ export function Drawer({
         // A click on the backdrop lands on the dialog element itself.
         if (event.target === event.currentTarget) onClose();
       }}
-      className={`fixed inset-y-0 m-0 h-dvh max-h-dvh max-w-none bg-paper p-0 text-ink shadow-2xl backdrop:bg-ink/40 open:flex ${widthClass} ${
-        side === "end" ? "ms-auto me-0 drawer-end" : "ms-0 me-auto drawer-start"
-      }`}
+      className={`dc-drawer ${side === "end" ? "drawer-end" : "drawer-start"} ${widthClass}`.trim()}
     >
-      <div className="flex h-full w-full flex-col">
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-5">
-          <h2 className="text-base font-semibold">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="-me-2 grid size-10 place-items-center rounded-full hover:bg-canvas"
-            aria-label={closeLabel}
-          >
+      <div className="dc-drawer-shell">
+        <div className="dc-drawer-header">
+          <h2 className="dc-drawer-title">{title}</h2>
+          <button type="button" onClick={onClose} className="dc-drawer-close" aria-label={closeLabel}>
             <X size={20} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
-        {footer && <div className="shrink-0 border-t border-line bg-paper p-5">{footer}</div>}
+        <div className="dc-drawer-body">{children}</div>
+        {footer && <div className="dc-drawer-footer">{footer}</div>}
       </div>
     </dialog>
   );

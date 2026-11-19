@@ -326,9 +326,15 @@ function adminApi(user: AdminUser): AdminApi {
 
         const stamp = now();
         if (stockDelta !== 0) {
-          data.products = data.products.map(
-            (product) => applyStockDelta(product, order.items, stockDelta) ?? product,
-          );
+          try {
+            data.products = data.products.map(
+              (product) => applyStockDelta(product, order.items, stockDelta) ?? product,
+            );
+          } catch (error) {
+            throw new ConflictError(
+              error instanceof Error ? error.message : "Not enough stock to confirm this order.",
+            );
+          }
           order.stockReserved = stockDelta === 1;
           order.events.push({
             at: stamp,
@@ -361,6 +367,28 @@ function adminApi(user: AdminUser): AdminApi {
         }
         if (patch.internalNote !== undefined) order.internalNote = patch.internalNote;
         order.updatedAt = stamp;
+        return publicOrder(order);
+      });
+    },
+
+    async anonymizeOrder(id) {
+      return updateData((data) => {
+        const order = data.orders.find((candidate) => candidate.id === id);
+        if (!order) throw new NotFoundError("Order not found");
+        if (!["completed", "cancelled", "discarded"].includes(order.status)) {
+          throw new ConflictError("Only completed, cancelled, or discarded orders can have customer details removed.");
+        }
+        const stamp = now();
+        order.customer = { name: "Redacted customer", phone: "", email: "" };
+        order.address = null;
+        order.customerNote = "";
+        order.updatedAt = stamp;
+        order.events.push({
+          at: stamp,
+          kind: "note",
+          note: "Customer personal details redacted (POPIA).",
+          by: user.email,
+        });
         return publicOrder(order);
       });
     },
@@ -453,12 +481,16 @@ function adminApi(user: AdminUser): AdminApi {
 /* ------------------------------------------------------------------ auth */
 
 const authApi: AuthApi = {
-  async currentAdmin() {
+  async currentUser() {
     const session = await readSession();
     if (!session) return null;
     const owner = (await readData()).owner;
     if (!owner || owner.id !== session.sub || owner.sessionVersion !== session.v) return null;
     return { id: owner.id, email: owner.email };
+  },
+
+  async currentAdmin() {
+    return authApi.currentUser();
   },
 
   async signIn(email, password) {

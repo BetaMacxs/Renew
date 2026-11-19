@@ -23,6 +23,7 @@ import {
 import type { Product, ProductImage } from "@/lib/domain/types";
 import { buildInquiryMessage, whatsappUrl } from "@/lib/domain/whatsapp";
 import { useStore } from "./StoreProvider";
+import styles from "./store.module.css";
 
 type Props = {
   product: Product;
@@ -105,29 +106,29 @@ export function ProductView({ product, productUrl, category, variantId = null, c
   const activeImageId = variant?.imageId ?? null;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-14">
+    <div className={styles.productLayout}>
       <Gallery product={product} activeImageId={activeImageId} />
 
-      <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className={styles.productBuyBox}>
         {category && (
-          <Link href={`/categories/${category.slug}`} className="eyebrow hover:text-ink">
+          <Link href={`/categories/${category.slug}`} className="eyebrow">
             {category.name}
           </Link>
         )}
-        <h1 className="display mt-3 text-[clamp(1.75rem,3.2vw,2.6rem)]">{product.name}</h1>
-        {product.summary && <p className="mt-3 text-ink-2">{product.summary}</p>}
+        <h1 className={`display ${styles.productTitle}`}>{product.name}</h1>
+        {product.summary && <p className={styles.productSummary}>{product.summary}</p>}
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <span className={`price text-[1.75rem] font-semibold ${discount ? "text-accent-text" : ""}`}>
+        <div className={styles.productPriceRow}>
+          <span className={`price ${styles.productPriceMain} ${discount ? styles.productPriceDiscount : ""}`.trim()}>
             {!variant && summary.varies ? t.product.from(money(price)) : money(price)}
           </span>
           {discount !== null && compareAt != null && (
             <>
-              <s className="price relative text-lg text-ink-3">
+              <s className={`price ${styles.productPriceCompare}`}>
                 <span className="sr-only">{t.product.wasPrice(money(compareAt))}</span>
                 <span aria-hidden="true">{money(compareAt)}</span>
               </s>
-              <span className="price rounded-[var(--radius-pill)] bg-accent px-2.5 py-1 text-xs font-bold text-accent-ink">
+              <span className={`price ${styles.productSaveBadge}`}>
                 {t.product.save(discount)}
               </span>
             </>
@@ -135,24 +136,24 @@ export function ProductView({ product, productUrl, category, variantId = null, c
         </div>
 
         {product.options.length > 0 && (
-          <div className="mt-8 space-y-6">
+          <div className={styles.optionsStack}>
             {product.options.map((option, index) => {
               const swatches = option.values.some((value) => value.swatch);
               const chosen = selection[index];
               return (
                 <fieldset key={option.name}>
-                  <legend className="mb-3 flex w-full items-baseline justify-between text-sm">
+                  <legend className={styles.optionLegend}>
                     <span>
-                      <span className="font-semibold">{option.name}</span>
-                      {chosen && <span className="text-ink-2">: {chosen}</span>}
+                      <span className={styles.optionLegendName}>{option.name}</span>
+                      {chosen && <span className={styles.optionLegendChosen}>: {chosen}</span>}
                     </span>
                     {missing === index && (
-                      <span className="font-medium text-danger" role="alert">
+                      <span className={styles.optionMissing} role="alert">
                         {t.product.choose(option.name)}
                       </span>
                     )}
                   </legend>
-                  <div className="flex flex-wrap gap-2">
+                  <div className={styles.optionValuesRow}>
                     {option.values.map((value) => {
                       const state = optionValueState(product, index, value.label, selection);
                       const selected = chosen === value.label;
@@ -166,17 +167,15 @@ export function ProductView({ product, productUrl, category, variantId = null, c
                             aria-pressed={selected}
                             aria-label={`${value.label}${soldOut ? ` — ${t.product.soldOut}` : ""}`}
                             title={value.label}
-                            className={`relative grid size-11 place-items-center rounded-full border-2 transition-colors ${
-                              selected ? "border-ink" : "border-transparent hover:border-line-strong"
-                            }`}
+                            className={`${styles.swatchBtn} ${selected ? styles.swatchBtnSelected : ""}`.trim()}
                           >
                             <span
-                              className="size-8 rounded-full ring-1 ring-black/10"
+                              className={styles.swatchCircle}
                               style={{ background: value.swatch }}
                             />
                             {soldOut && (
                               <span
-                                className="pointer-events-none absolute h-0.5 w-9 -rotate-45 rounded bg-paper ring-1 ring-ink/30"
+                                className={styles.swatchStrike}
                                 aria-hidden="true"
                               />
                             )}
@@ -190,13 +189,9 @@ export function ProductView({ product, productUrl, category, variantId = null, c
                           onClick={() => choose(index, value.label)}
                           aria-pressed={selected}
                           aria-label={`${value.label}${soldOut ? ` — ${t.product.soldOut}` : ""}`}
-                          className={`min-w-12 rounded-[var(--radius-control)] border px-4 py-2.5 text-sm font-medium transition-colors ${
-                            selected
-                              ? "border-ink bg-ink text-paper"
-                              : soldOut
-                                ? "border-line text-ink-3 line-through decoration-ink-3/70"
-                                : "border-line-strong hover:border-ink"
-                          }`}
+                          className={`${styles.optionBtn} ${
+                            selected ? styles.optionBtnSelected : soldOut ? styles.optionBtnSoldOut : ""
+                          }`.trim()}
                         >
                           {value.label}
                         </button>
@@ -209,9 +204,11 @@ export function ProductView({ product, productUrl, category, variantId = null, c
           </div>
         )}
 
-        <p className="mt-6 flex items-center gap-2 text-sm" aria-live="polite">
+        <p className={styles.stockStatus} aria-live="polite">
           <span
-            className={`size-2 rounded-full ${!inStock ? "bg-danger" : low ? "bg-warning" : "bg-success"}`}
+            className={`${styles.stockDot} ${
+              !inStock ? styles.stockDotOut : low ? styles.stockDotLow : styles.stockDotIn
+            }`}
             aria-hidden="true"
           />
           {!complete
@@ -223,23 +220,23 @@ export function ProductView({ product, productUrl, category, variantId = null, c
                 : t.product.inStock}
         </p>
 
-        <div className="mt-4 flex gap-3">
-          <div className="flex h-14 items-center rounded-[var(--radius-control)] border border-line-strong">
+        <div className={styles.addToBagRow}>
+          <div className={styles.qtyBox}>
             <button
               type="button"
-              className="grid h-full w-11 place-items-center text-ink-2 hover:text-ink disabled:opacity-30"
+              className={styles.qtyBtn}
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1}
               aria-label={t.product.decrease}
             >
               <Minus size={16} />
             </button>
-            <span className="price w-8 text-center" aria-label={t.product.quantity}>
+            <span className={`price ${styles.qtyValue}`} aria-label={t.product.quantity}>
               {quantity}
             </span>
             <button
               type="button"
-              className="grid h-full w-11 place-items-center text-ink-2 hover:text-ink disabled:opacity-30"
+              className={styles.qtyBtn}
               onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
               disabled={quantity >= maxQuantity}
               aria-label={t.product.increase}
@@ -251,7 +248,7 @@ export function ProductView({ product, productUrl, category, variantId = null, c
             type="button"
             onClick={add}
             disabled={complete && !inStock}
-            className={buttonClass({ size: "lg", className: "flex-1" })}
+            className={buttonClass({ size: "lg", className: styles.addToBagBtn })}
             data-testid="add-to-cart"
           >
             {added ? (
@@ -272,7 +269,7 @@ export function ProductView({ product, productUrl, category, variantId = null, c
             href={inquiry}
             target="_blank"
             rel="noopener noreferrer"
-            className={buttonClass({ variant: "outline", full: true, className: "mt-3" })}
+            className={buttonClass({ variant: "outline", full: true, className: styles.whatsappAskBtn })}
           >
             <WhatsAppIcon size={18} />
             {t.product.askOnWhatsApp}
@@ -287,17 +284,6 @@ export function ProductView({ product, productUrl, category, variantId = null, c
 
 /* ---------------------------------------------------------------- gallery */
 
-/**
- * The photo frame takes the shape of the product's first photo (extreme ones
- * within 1:2 to 2:1), and is never taller than
- * `--gallery-max`: on phones and tablets about a screen's width or 60% of its
- * height, on desktop what fits below the header. Photos are shown whole
- * (`object-contain`), so a photo of another shape sits on the tile colour
- * instead of being cropped.
- */
-const FRAME =
-  "relative mx-auto aspect-[var(--ratio)] w-[min(100%,calc(var(--gallery-max)*var(--ratio)))] overflow-hidden rounded-card bg-tile";
-
 function frameRatio(image: ProductImage | undefined): number {
   if (!image?.width || !image.height) return 4 / 5;
   return Math.min(2, Math.max(1 / 2, image.width / image.height));
@@ -306,8 +292,8 @@ function frameRatio(image: ProductImage | undefined): number {
 function Gallery({ product, activeImageId }: { product: Product; activeImageId: string | null }) {
   const { t } = useStore();
   const images = product.images;
-  const frame = {
-    className: "[--gallery-max:min(100vw,60svh)] lg:[--gallery-max:max(26rem,calc(100svh-12rem))]",
+  const frameProps = {
+    className: styles.galleryRoot,
     style: { "--ratio": frameRatio(images[0]) } as CSSProperties,
   };
   const [index, setIndex] = useState(() => Math.max(0, images.findIndex((image) => image.id === activeImageId)));
@@ -344,19 +330,19 @@ function Gallery({ product, activeImageId }: { product: Product; activeImageId: 
 
   if (images.length === 0) {
     return (
-      <div {...frame}>
-        <div className={FRAME} />
+      <div {...frameProps}>
+        <div className={styles.galleryFrame} />
       </div>
     );
   }
 
   return (
-    <div {...frame}>
+    <div {...frameProps}>
       {/* Phones: swipe between photos. */}
-      <div className="relative -mx-4 sm:mx-0 lg:hidden">
+      <div className={styles.galleryMobileWrap}>
         <div
           ref={rail}
-          className="scrollbar-none relative flex snap-x snap-mandatory overflow-x-auto"
+          className={`scrollbar-none ${styles.galleryMobileRail}`}
           onScroll={(event) => {
             const element = event.currentTarget;
             // In right-to-left languages scrollLeft counts down from 0.
@@ -365,26 +351,26 @@ function Gallery({ product, activeImageId }: { product: Product; activeImageId: 
           }}
         >
           {images.map((image, position) => (
-            <div key={image.id} className="w-full shrink-0 snap-center px-4 sm:px-0">
-              <div className={FRAME}>
+            <div key={image.id} className={styles.galleryMobileSlide}>
+              <div className={styles.galleryFrame}>
                 <Image
                   src={image.url}
                   alt={imageAlt(product, image, position)}
                   fill
                   priority={position === 0}
                   sizes="100vw"
-                  className="object-contain"
+                  className={styles.galleryImgContain}
                 />
               </div>
             </div>
           ))}
         </div>
         {images.length > 1 && (
-          <div className="mt-3 flex justify-center gap-1.5" aria-hidden="true">
+          <div className={styles.galleryDots} aria-hidden="true">
             {images.map((image, position) => (
               <span
                 key={image.id}
-                className={`h-1.5 rounded-full transition-all ${position === index ? "w-5 bg-ink" : "w-1.5 bg-line-strong"}`}
+                className={`${styles.galleryDot} ${position === index ? styles.galleryDotActive : ""}`.trim()}
               />
             ))}
           </div>
@@ -392,19 +378,19 @@ function Gallery({ product, activeImageId }: { product: Product; activeImageId: 
       </div>
 
       {/* Desktop: a large photo with hover zoom, and thumbnails. */}
-      <div className="hidden lg:block">
+      <div className={styles.galleryDesktopWrap}>
         <ZoomImage image={images[index]} alt={imageAlt(product, images[index], index)} />
         {images.length > 1 && (
-          <div className="mt-4 flex items-center justify-center gap-3">
+          <div className={styles.galleryThumbsRow}>
             <button
               type="button"
               onClick={() => setIndex((current) => (current - 1 + images.length) % images.length)}
-              className="grid size-10 shrink-0 place-items-center rounded-full border border-line hover:border-ink"
+              className={styles.galleryNavBtn}
               aria-label={t.product.previousPhoto}
             >
               <ChevronLeft size={18} className="flip-rtl" />
             </button>
-            <ul ref={thumbs} className="scrollbar-none flex min-w-0 gap-3 overflow-x-auto p-1">
+            <ul ref={thumbs} className={`scrollbar-none ${styles.galleryThumbsList}`}>
               {images.map((image, position) => (
                 <li key={image.id}>
                   <button
@@ -412,11 +398,11 @@ function Gallery({ product, activeImageId }: { product: Product; activeImageId: 
                     onClick={() => setIndex(position)}
                     aria-label={t.product.photo(position + 1, images.length)}
                     aria-current={position === index}
-                    className={`relative block h-24 w-20 overflow-hidden rounded-[calc(var(--radius-card)*0.6)] bg-tile ring-offset-2 transition ${
-                      position === index ? "ring-2 ring-ink" : "opacity-75 hover:opacity-100"
-                    }`}
+                    className={`${styles.galleryThumbBtn} ${
+                      position === index ? styles.galleryThumbBtnActive : ""
+                    }`.trim()}
                   >
-                    <Image src={image.url} alt="" fill sizes="80px" className="object-cover" />
+                    <Image src={image.url} alt="" fill sizes="80px" className={styles.imgCover} />
                   </button>
                 </li>
               ))}
@@ -424,7 +410,7 @@ function Gallery({ product, activeImageId }: { product: Product; activeImageId: 
             <button
               type="button"
               onClick={() => setIndex((current) => (current + 1) % images.length)}
-              className="grid size-10 shrink-0 place-items-center rounded-full border border-line hover:border-ink"
+              className={styles.galleryNavBtn}
               aria-label={t.product.nextPhoto}
             >
               <ChevronRight size={18} className="flip-rtl" />
@@ -441,7 +427,7 @@ function ZoomImage({ image, alt }: { image: ProductImage; alt: string }) {
   const [origin, setOrigin] = useState<string | null>(null);
   return (
     <div
-      className={`${FRAME} cursor-zoom-in`}
+      className={`${styles.galleryFrame} ${styles.galleryZoomWrap}`}
       onPointerMove={(event) => {
         if (event.pointerType !== "mouse") return;
         const box = event.currentTarget.getBoundingClientRect();
@@ -458,7 +444,7 @@ function ZoomImage({ image, alt }: { image: ProductImage; alt: string }) {
         fill
         priority
         sizes="(min-width: 1440px) 760px, 55vw"
-        className="object-contain transition-transform duration-200 ease-out"
+        className={styles.galleryZoomImg}
         style={{ transform: origin ? "scale(2)" : "scale(1)", transformOrigin: origin ?? "50% 50%" }}
       />
     </div>

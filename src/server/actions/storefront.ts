@@ -70,7 +70,7 @@ export async function placeOrderAction(raw: Record<string, unknown>): Promise<Pl
   if (!(await checkFormToken(raw.formToken))) {
     return { ok: false, errors: {}, message: "failed" };
   }
-  const limit = rateLimit(`order:${await clientAddress()}`, 6, 10 * 60 * 1000);
+  const limit = await rateLimit(`order:${await clientAddress()}`, 6, 10 * 60 * 1000);
   if (!limit.ok) return { ok: false, errors: {}, message: "rate_limited" };
 
   const parsed = checkoutSchema.safeParse(raw);

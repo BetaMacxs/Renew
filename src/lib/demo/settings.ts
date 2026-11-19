@@ -1,30 +1,28 @@
 import type { SettingsInput } from "@/lib/domain/settings";
 
 /**
- * The demo store's settings: a fictional shop called Halden.
+ * Detail Corner demo store settings: South African automotive detailing and car-care store.
  *
- * Deliberately contains no real contact details. The email uses the
- * `.example` domain, which is reserved and can never be registered, and the
- * WhatsApp number is empty — so WhatsApp checkout runs in demo mode (the
- * message is shown, never sent) until an owner adds their own number.
+ * Contains no real contact details (.example email domain, empty WhatsApp number
+ * so WhatsApp checkout runs in demo mode until configured).
  */
 export const DEMO_SETTINGS: SettingsInput = {
   store: {
-    name: "Halden",
-    tagline: "Well-made things for everyday life",
+    name: "Detail Corner",
+    tagline: "The Art of Perfection",
     description:
-      "Halden is a small independent store for everyday goods: audio and desk tech, things for the kitchen and home, wardrobe staples, bags and daily care — chosen to be used, not stored.",
+      "Detail Corner is South Africa's independent store for professional automotive detailing products, wash chemicals and maintenance accessories — chosen for performance, safety and finish.",
     logoUrl: "",
     language: "en",
-    currency: "USD",
+    currency: "ZAR",
     siteUrl: "",
   },
   contact: {
-    email: "hello@halden.example",
+    email: "hello@detailcorner.example",
     phone: "",
     whatsapp: "",
     address: "",
-    hours: "Monday to Saturday, 9:00–18:00",
+    hours: "Monday to Friday, 8:00–17:00",
   },
   social: {},
   checkout: {
@@ -32,57 +30,57 @@ export const DEMO_SETTINGS: SettingsInput = {
     cashOnDelivery: true,
     bankTransfer: true,
     bankTransferInstructions:
-      "Account name: Halden Goods (demo)\nBank: Example Bank\nAccount number: replace with your own details in Settings → Checkout\n\nYour order ships as soon as the transfer arrives.",
+      "Account name: Detail Corner (demo)\nBank: Standard Bank\nAccount number: replace with your own details in Settings → Checkout\n\nYour order ships as soon as the transfer arrives.",
     confirmationNote: "We confirm every order by phone or WhatsApp within one business day.",
   },
   shipping: {
     methods: [
       {
         id: "standard",
-        name: "Standard delivery",
-        description: "3–5 business days",
-        price: 6,
+        name: "Standard courier",
+        description: "3–5 business days across South Africa",
+        price: 100,
         requiresAddress: true,
       },
       {
         id: "express",
-        name: "Express delivery",
+        name: "Express courier",
         description: "1–2 business days",
-        price: 14,
+        price: 180,
         requiresAddress: true,
       },
       {
         id: "pickup",
-        name: "Pickup from the studio",
+        name: "Studio pickup",
         description: "Ready the next business day",
         price: 0,
         requiresAddress: false,
       },
     ],
-    freeShippingThreshold: 75,
-    areas: "",
+    freeShippingThreshold: 1000,
+    areas: "South Africa",
   },
   theme: {
-    accent: "#0F4C5C",
+    accent: "#C41E3A",
     fontPairing: "signage",
     corners: "soft",
   },
   homepage: {
     announcement: {
       enabled: true,
-      text: "Free delivery on orders over $75",
+      text: "Free delivery on orders over R1,000 across South Africa",
       href: "/shop",
     },
     hero: {
       enabled: true,
-      eyebrow: "The everyday edit",
-      heading: "Good things, used every day",
-      text: "Headphones you'll wear on every commute, mugs that become your favourite, a bag that goes everywhere. Fewer, better things — delivered to your door.",
+      eyebrow: "Professional car care",
+      heading: "The Art of Detailing Perfection",
+      text: "Premium car shampoos, ceramic sealants, microfibre towels and detailing gear delivered to your door. Fewer, better products for your vehicle.",
       imageUrl: "/demo/hero/hero-1.jpg",
-      primaryLabel: "Shop everything",
+      primaryLabel: "Shop all products",
       primaryHref: "/shop",
-      secondaryLabel: "Browse the gift guide",
-      secondaryHref: "/collections/gift-guide",
+      secondaryLabel: "Explore Wash & Decon",
+      secondaryHref: "/collections/wash-decon",
     },
     sections: [
       { id: "categories", type: "categories", enabled: true, title: "Shop by category" },
@@ -99,19 +97,19 @@ export const DEMO_SETTINGS: SettingsInput = {
         id: "gift-banner",
         type: "banner",
         enabled: true,
-        eyebrow: "Gift guide",
-        heading: "Gifts they'll actually use",
-        text: "Thoughtful picks across every aisle, most under $60 — wrapped in plain paper, ready to give.",
+        eyebrow: "Wash & Decontamination",
+        heading: "Safe wash essentials",
+        text: "Professional pre-wash snow foams, pH-neutral shampoos and plush wash mitts to protect your paintwork from swirl marks.",
         imageUrl: "/demo/banners/gift-guide.jpg",
-        linkLabel: "Shop the gift guide",
-        linkHref: "/collections/gift-guide",
+        linkLabel: "Shop Wash & Decon",
+        linkHref: "/collections/wash-decon",
         align: "start",
       },
       {
         id: "desk",
         type: "products",
         enabled: true,
-        title: "The desk setup",
+        title: "Interior & Glass",
         source: "collection",
         collectionId: "de000000-0000-4000-8000-a00000000002",
         limit: 4,
@@ -130,12 +128,12 @@ export const DEMO_SETTINGS: SettingsInput = {
   },
   policies: {
     about:
-      "Halden is a demo store that shows what this platform can do. Every product, price and photo here is sample content — replace it with your own from the dashboard.\n\nWe started with a simple idea: buy fewer things, and make them good ones. Everything we stock is something we would use ourselves.",
+      "Detail Corner is a demo store showcasing professional automotive car-care ecommerce. Every product, price and photo here is sample content — replace it with your own from the dashboard.\n\nWe believe in quality chemicals and correct wash techniques to keep every vehicle looking its absolute best.",
     shipping:
-      "We deliver Monday to Saturday.\n\n- Standard delivery: 3–5 business days, $6\n- Express delivery: 1–2 business days, $14\n- Pickup from the studio: free, ready the next business day\n\nDelivery is free on orders over $75. We confirm every order with you before it ships.",
+      "We deliver Monday to Friday across South Africa.\n\n- Standard courier: 3–5 business days, R100\n- Express courier: 1–2 business days, R180\n- Studio pickup: free, ready the next business day\n\nDelivery is free on orders over R1,000. We confirm every order with you before it ships.",
     returns:
-      "Changed your mind? Return unused items within 30 days for a refund or an exchange.\n\nContact us with your order number and we'll arrange the return. Items must be unused and in their original packaging. Personal-care products can only be returned unopened.",
+      "Changed your mind? Return unused items within 30 days for a refund or an exchange.\n\nContact us with your order number and we'll arrange the return. Items must be unused and in their original packaging. Chemical products can only be returned unopened and sealed.",
     privacy:
-      "We only collect what we need to deliver your order: your name, phone number, delivery address and, if you give it, your email.\n\nWe use these details to confirm, deliver and support your order — never for advertising, and we never sell them. We don't use tracking cookies. To see or delete the details we hold about you, contact us.",
+      "We only collect what we need to deliver your order: your name, phone number, delivery address and email.\n\nWe use these details to confirm, deliver and support your order — never for advertising, and we never sell them. We don't use tracking cookies. To see or delete the details we hold about you, contact us.",
   },
 };

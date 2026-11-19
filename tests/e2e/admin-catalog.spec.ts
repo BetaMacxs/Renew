@@ -5,7 +5,7 @@ import { expectToast } from "./fixtures";
 
 test.describe.configure({ mode: "serial" });
 
-const PHOTO = "public/demo/products/insulated-steel-bottle/1.jpg";
+const PHOTO = "public/demo/products/premium-ph-neutral-car-shampoo-1l/1.jpg";
 
 async function openProduct(page: Page, name: string) {
   await page.goto(`/admin/products?q=${encodeURIComponent(name)}`);
@@ -44,7 +44,7 @@ test("create a product with a photo and sizes, and see it in the shop", async ({
   await page.getByLabel("Stock for 500 ml", { exact: true }).fill("4");
   await page.getByLabel("Stock for 750 ml", { exact: true }).fill("0");
 
-  await page.getByLabel("Category").selectOption({ label: "Home & Kitchen" });
+  await page.getByLabel("Category").selectOption({ label: "Car Wash" });
   await page.getByRole("radio", { name: /^Active/ }).check();
   await page.getByTestId("save-product").click();
   await expectToast(page, "Product created");
@@ -53,12 +53,12 @@ test("create a product with a photo and sizes, and see it in the shop", async ({
   await page.goto("/products/trail-water-bottle");
   await expect(page.getByRole("heading", { level: 1, name: "Trail Water Bottle" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Steel water bottle on a white table" }).first()).toBeVisible();
-  await expect(page.getByText("$30").first()).toBeVisible();
+  await expect(page.getByText("R30").first()).toBeVisible();
   // The 750 ml has no stock: shown, but not buyable.
   await page.getByRole("button", { name: /^750 ml/ }).click();
   await expect(page.getByTestId("add-to-cart")).toBeDisabled();
 
-  await page.goto("/categories/home-kitchen");
+  await page.goto("/categories/car-wash");
   await expect(page.getByRole("heading", { name: "Trail Water Bottle" })).toBeVisible();
 });
 
@@ -67,7 +67,7 @@ test("a price change is live at once", async ({ page }) => {
   await page.getByLabel("Price for 500 ml", { exact: true }).fill("28");
   await save(page);
   await page.goto("/products/trail-water-bottle");
-  await expect(page.getByText("$28").first()).toBeVisible();
+  await expect(page.getByText("R28").first()).toBeVisible();
 });
 
 test("a draft is hidden from the shop, and archived products explain themselves", async ({ page }) => {
@@ -139,18 +139,18 @@ test("collections: hand-pick products from any category", async ({ page }) => {
   await page.getByTestId("new-collection").click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Name", { exact: true }).fill("Weekend Picks");
-  await dialog.getByLabel("Find a product").fill("tote");
-  await dialog.getByRole("checkbox", { name: /Canvas Tote/ }).check();
-  await dialog.getByLabel("Find a product").fill("dutch");
-  await dialog.getByRole("checkbox", { name: /Dutch Oven/ }).check();
+  await dialog.getByLabel("Find a product").fill("shampoo");
+  await dialog.getByRole("checkbox", { name: /Car Shampoo/ }).check();
+  await dialog.getByLabel("Find a product").fill("foam");
+  await dialog.getByRole("checkbox", { name: /Snow Foam/ }).check();
   await expect(dialog).toContainText("2 selected");
   await dialog.getByTestId("save-grouping").click();
   await expectToast(page, "Weekend Picks created");
 
   await page.goto("/collections/weekend-picks");
-  await expect(page.getByRole("heading", { name: "Canvas Tote" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Dutch Oven/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Fleece Crewneck" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: /Car Shampoo/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Snow Foam/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "All-Purpose Cleaner 1L" })).toHaveCount(0);
 
   // Clean up: the products stay, only the collection goes.
   await page.goto("/admin/collections");
@@ -158,5 +158,5 @@ test("collections: hand-pick products from any category", async ({ page }) => {
   await page.getByRole("dialog").getByRole("button", { name: "Delete", exact: true }).click();
   await page.getByRole("button", { name: "Delete collection" }).click();
   await expectToast(page, "Weekend Picks deleted");
-  expect((await page.goto("/products/canvas-tote"))?.status()).toBe(200);
+  expect((await page.goto("/products/premium-ph-neutral-car-shampoo-1l"))?.status()).toBe(200);
 });

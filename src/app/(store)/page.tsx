@@ -8,6 +8,7 @@ import {
   Highlights,
   ProductRow,
 } from "@/components/store/HomeSections";
+import styles from "@/components/store/store.module.css";
 import { buttonClass } from "@/components/ui/button";
 import {
   sortProducts,
@@ -39,11 +40,11 @@ export default async function HomePage() {
     return (
       <>
         <Hero settings={settings} />
-        <Container className="py-24">
-          <div className="mx-auto max-w-xl text-center">
-            <h2 className="display text-3xl">{t.home.emptyStoreTitle}</h2>
-            <p className="mt-4 text-ink-2">{t.home.emptyStoreText}</p>
-            <Link href="/pages/contact" className={buttonClass({ variant: "outline", className: "mt-8" })}>
+        <Container className={styles.emptyStoreWrap}>
+          <div className={styles.emptyStoreInner}>
+            <h2 className={`display ${styles.emptyStoreTitle}`}>{t.home.emptyStoreTitle}</h2>
+            <p className={styles.emptyStoreText}>{t.home.emptyStoreText}</p>
+            <Link href="/pages/contact" className={buttonClass({ variant: "outline", className: styles.emptyStoreBtn })}>
               {t.nav.contact}
             </Link>
           </div>
@@ -92,11 +93,11 @@ export default async function HomePage() {
           switch (section.type) {
             case "categories":
               return categories.length > 0 ? (
-                <section key={section.id} className="mt-20 sm:mt-28">
+                <section key={section.id} className={styles.homeCategoriesSection}>
                   <Container>
-                    <div className="mb-6 flex items-end justify-between gap-6">
+                    <div className={styles.homeCategoriesHeader}>
                       <h2 className="eyebrow">{section.title || t.home.directoryTitle}</h2>
-                      <Link href="/shop" className="text-sm font-semibold underline-offset-4 hover:underline">
+                      <Link href="/shop" className={styles.homeCategoriesLink}>
                         {t.nav.allProducts}
                       </Link>
                     </div>

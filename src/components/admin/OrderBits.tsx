@@ -2,6 +2,7 @@ import { Globe } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brands";
 import { ORDER_STATUS_META, PAYMENT_STATUS_LABELS } from "@/lib/domain/orders";
 import type { Order } from "@/lib/domain/types";
+import styles from "./admin.module.css";
 import { Pill, type Tone } from "./ui";
 
 /** Small, shared pieces for showing orders in the dashboard. */
@@ -18,11 +19,11 @@ export function PaymentPill({ order }: { order: Pick<Order, "paymentStatus"> }) 
 
 export function ChannelBadge({ channel }: { channel: Order["channel"] }) {
   return channel === "whatsapp" ? (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#127C45]">
+    <span className={styles.channelWhatsapp}>
       <WhatsAppIcon size={13} /> WhatsApp
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-2">
+    <span className={styles.channelWebsite}>
       <Globe size={13} /> Website
     </span>
   );

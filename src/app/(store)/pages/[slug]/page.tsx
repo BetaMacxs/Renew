@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { WhatsAppIcon } from "@/components/icons/brands";
 import { Container } from "@/components/store/HomeSections";
 import { RichText } from "@/components/store/RichText";
+import styles from "@/components/store/store.module.css";
 import { formatInternational } from "@/lib/domain/phone";
 import { isWhatsAppConfigured } from "@/lib/domain/settings";
 import { getDictionary } from "@/lib/i18n";
@@ -43,7 +44,7 @@ export default async function InfoPage({ params }: Props) {
         icon: <WhatsAppIcon size={18} />,
         label: t.pages.whatsapp,
         value: (
-          <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:underline" dir="ltr">
+          <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className={styles.infoLink} dir="ltr">
             {formatInternational(contact.whatsapp)}
           </a>
         ),
@@ -52,7 +53,7 @@ export default async function InfoPage({ params }: Props) {
         icon: <Phone size={18} />,
         label: t.pages.phone,
         value: (
-          <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`} className="underline-offset-4 hover:underline" dir="ltr">
+          <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`} className={styles.infoLink} dir="ltr">
             {contact.phone}
           </a>
         ),
@@ -61,7 +62,7 @@ export default async function InfoPage({ params }: Props) {
         icon: <Mail size={18} />,
         label: t.pages.email,
         value: (
-          <a href={`mailto:${contact.email}`} className="underline-offset-4 hover:underline">
+          <a href={`mailto:${contact.email}`} className={styles.infoLink}>
             {contact.email}
           </a>
         ),
@@ -71,16 +72,16 @@ export default async function InfoPage({ params }: Props) {
     ].filter(Boolean) as { icon: React.ReactNode; label: string; value: React.ReactNode }[];
 
     return (
-      <Container className="max-w-3xl pt-10 sm:pt-16">
-        <h1 className="display text-[clamp(2rem,5vw,3.4rem)]">{t.pages.contact}</h1>
-        <p className="mt-4 text-ink-2 sm:text-lg">{t.pages.contactIntro}</p>
-        <dl className="mt-10 divide-y divide-line border-y border-line">
+      <Container className={styles.infoContainer}>
+        <h1 className={`display ${styles.infoTitle}`}>{t.pages.contact}</h1>
+        <p className={styles.infoIntro}>{t.pages.contactIntro}</p>
+        <dl className={styles.infoContactList}>
           {rows.map((row) => (
-            <div key={row.label} className="flex items-start gap-4 py-5">
-              <span className="mt-0.5 text-ink-2">{row.icon}</span>
+            <div key={row.label} className={styles.infoContactRow}>
+              <span className={styles.infoContactIcon}>{row.icon}</span>
               <div>
                 <dt className="eyebrow">{row.label}</dt>
-                <dd className="mt-1 text-lg">{row.value}</dd>
+                <dd className={styles.infoContactValue}>{row.value}</dd>
               </div>
             </div>
           ))}
@@ -91,10 +92,10 @@ export default async function InfoPage({ params }: Props) {
 
   const text = settings.policies[slug];
   return (
-    <Container className="max-w-3xl pt-10 sm:pt-16">
-      <h1 className="display text-[clamp(2rem,5vw,3.4rem)]">{t.pages[slug]}</h1>
-      <div className="mt-8 text-[1.05rem]">
-        {text ? <RichText text={text} /> : <p className="text-ink-3">{t.pages.emptyPolicy}</p>}
+    <Container className={styles.infoContainer}>
+      <h1 className={`display ${styles.infoTitle}`}>{t.pages[slug]}</h1>
+      <div className={styles.infoPolicyBody}>
+        {text ? <RichText text={text} /> : <p className={styles.infoEmptyPolicy}>{t.pages.emptyPolicy}</p>}
       </div>
     </Container>
   );

@@ -15,6 +15,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import { buttonClass, type ButtonVariant } from "@/components/ui/button";
+import styles from "./admin.module.css";
 
 /* ------------------------------------------------------------- structure */
 
@@ -30,13 +31,13 @@ export function PageHeader({
   back?: ReactNode;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0">
-        {back && <div className="mb-3">{back}</div>}
-        <h1 className="display text-[clamp(1.6rem,3vw,2.2rem)]">{title}</h1>
-        {description && <p className="mt-2 max-w-2xl text-sm text-ink-2">{description}</p>}
+    <div className={styles.pageHeader}>
+      <div className={styles.pageHeaderLead}>
+        {back && <div className={styles.pageHeaderBack}>{back}</div>}
+        <h1 className={`display ${styles.pageTitle}`}>{title}</h1>
+        {description && <p className={styles.pageDescription}>{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className={styles.pageActions}>{actions}</div>}
     </div>
   );
 }
@@ -59,17 +60,17 @@ export function Panel({
   id?: string;
 }) {
   return (
-    <section id={id} className={`scroll-mt-24 rounded-[14px] border border-line bg-paper ${className}`}>
+    <section id={id} className={`${styles.panel} ${className}`}>
       {(title || actions) && (
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <div className={styles.panelHeader}>
           <div>
-            {title && <h2 className="font-semibold">{title}</h2>}
-            {description && <p className="mt-0.5 text-sm text-ink-3">{description}</p>}
+            {title && <h2 className={styles.panelTitle}>{title}</h2>}
+            {description && <p className={styles.panelDesc}>{description}</p>}
           </div>
           {actions}
         </div>
       )}
-      <div className={padded ? "p-5" : ""}>{children}</div>
+      <div className={padded ? styles.panelBody : ""}>{children}</div>
     </section>
   );
 }
@@ -81,27 +82,24 @@ function useFieldId(explicit?: string) {
   return explicit ?? generated;
 }
 
-const controlClass = (invalid: boolean) =>
-  `w-full rounded-[10px] border bg-paper px-3 py-2.5 text-sm outline-none transition-colors placeholder:text-ink-3 focus:border-ink disabled:bg-canvas disabled:text-ink-3 ${
-    invalid ? "border-danger" : "border-line-strong"
-  }`;
+const controlClass = (invalid: boolean) => `${styles.control} ${invalid ? styles.controlInvalid : ""}`;
 
 type FieldShell = { label: ReactNode; hint?: ReactNode; error?: string; className?: string; optional?: boolean };
 
 function Shell({ id, label, hint, error, className = "", optional, children }: FieldShell & { id: string; children: ReactNode }) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1.5 flex items-baseline justify-between gap-3 text-sm font-medium">
+      <label htmlFor={id} className={styles.fieldLabel}>
         <span>{label}</span>
-        {optional && <span className="text-xs font-normal text-ink-3">Optional</span>}
+        {optional && <span className={styles.fieldOptional}>Optional</span>}
       </label>
       {children}
       {error ? (
-        <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-danger">
+        <p id={`${id}-error`} className={styles.fieldError}>
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-ink-3">
+        <p id={`${id}-hint`} className={styles.fieldHint}>
           {hint}
         </p>
       ) : null}
@@ -116,27 +114,40 @@ export function TextField({
   className,
   optional,
   prefix,
+  prefixVariant = "short",
   suffix,
   id,
   ...input
-}: FieldShell & InputHTMLAttributes<HTMLInputElement> & { prefix?: ReactNode; suffix?: ReactNode }) {
+}: FieldShell &
+  InputHTMLAttributes<HTMLInputElement> & {
+    prefix?: ReactNode;
+    prefixVariant?: "short" | "products" | "grouping";
+    suffix?: ReactNode;
+  }) {
   const fieldId = useFieldId(id);
+  const prefixClass =
+    prefixVariant === "products"
+      ? styles.controlPrefixProducts
+      : prefixVariant === "grouping"
+        ? styles.controlPrefixGrouping
+        : styles.controlPrefixShort;
+
   const control = (
     <input
       id={fieldId}
       aria-invalid={error ? true : undefined}
       aria-describedby={error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined}
       {...input}
-      className={`${controlClass(Boolean(error))} ${prefix ? "ps-9" : ""} ${suffix ? "pe-12" : ""}`}
+      className={`${controlClass(Boolean(error))} ${prefix ? prefixClass : ""} ${suffix ? styles.controlSuffixPad : ""}`}
     />
   );
   return (
     <Shell id={fieldId} label={label} hint={hint} error={error} className={className} optional={optional}>
       {prefix || suffix ? (
-        <div className="relative">
-          {prefix && <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-sm text-ink-3">{prefix}</span>}
+        <div className={styles.controlWrap}>
+          {prefix && <span className={styles.controlPrefix}>{prefix}</span>}
           {control}
-          {suffix && <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs text-ink-3">{suffix}</span>}
+          {suffix && <span className={styles.controlSuffix}>{suffix}</span>}
         </div>
       ) : (
         control
@@ -162,7 +173,7 @@ export function TextAreaField({
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined}
         {...textarea}
-        className={`${controlClass(Boolean(error))} min-h-24 leading-relaxed`}
+        className={`${controlClass(Boolean(error))} ${styles.textarea}`}
       />
     </Shell>
   );
@@ -185,7 +196,7 @@ export function SelectField({
         id={fieldId}
         aria-invalid={error ? true : undefined}
         {...select}
-        className={`${controlClass(Boolean(error))} pe-8`}
+        className={`${controlClass(Boolean(error))} ${styles.select}`}
       >
         {children}
       </select>
@@ -209,12 +220,12 @@ export function Toggle({
 }) {
   const id = useFieldId();
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <label htmlFor={id} className="text-sm font-medium">
+    <div className={styles.toggleRow}>
+      <div className={styles.toggleCopy}>
+        <label htmlFor={id} className={styles.toggleLabel}>
           {label}
         </label>
-        {description && <p className="mt-0.5 text-xs leading-relaxed text-ink-3">{description}</p>}
+        {description && <p className={styles.toggleDesc}>{description}</p>}
       </div>
       <button
         id={id}
@@ -223,15 +234,9 @@ export function Toggle({
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${
-          checked ? "bg-accent" : "bg-line-strong"
-        }`}
+        className={`${styles.switchBtn} ${checked ? styles.switchBtnChecked : ""}`}
       >
-        <span
-          className={`inline-block size-5 rounded-full bg-paper shadow transition-transform ${
-            checked ? "translate-x-[22px] rtl:-translate-x-[22px]" : "translate-x-0.5 rtl:-translate-x-0.5"
-          }`}
-        />
+        <span className={`${styles.switchThumb} ${checked ? styles.switchThumbChecked : ""}`} />
       </button>
     </div>
   );
@@ -242,21 +247,17 @@ export function Toggle({
 export type Tone = "neutral" | "info" | "warning" | "success" | "danger" | "muted" | "accent";
 
 const toneClass: Record<Tone, string> = {
-  neutral: "bg-canvas text-ink",
-  info: "bg-info-soft text-info",
-  warning: "bg-warning-soft text-warning",
-  success: "bg-success-soft text-success",
-  danger: "bg-danger-soft text-danger",
-  muted: "bg-canvas text-ink-3",
-  accent: "bg-accent-soft text-accent-text",
+  neutral: styles.toneNeutral,
+  info: styles.toneInfo,
+  warning: styles.toneWarning,
+  success: styles.toneSuccess,
+  danger: styles.toneDanger,
+  muted: styles.toneMuted,
+  accent: styles.toneAccent,
 };
 
 export function Pill({ tone = "neutral", children, className = "" }: { tone?: Tone; children: ReactNode; className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass[tone]} ${className}`}>
-      {children}
-    </span>
-  );
+  return <span className={`${styles.pill} ${toneClass[tone]} ${className}`}>{children}</span>;
 }
 
 export function Notice({
@@ -272,13 +273,13 @@ export function Notice({
 }) {
   const Icon = tone === "success" ? CircleCheck : tone === "info" ? Info : CircleAlert;
   return (
-    <div className={`flex gap-3 rounded-[12px] px-4 py-3 text-sm ${toneClass[tone]}`} role={tone === "danger" ? "alert" : undefined}>
-      <Icon size={18} className="mt-0.5 shrink-0" />
-      <div className="min-w-0 flex-1">
-        {title && <p className="font-semibold">{title}</p>}
-        {children && <div className={title ? "mt-0.5 opacity-90" : ""}>{children}</div>}
+    <div className={`${styles.notice} ${toneClass[tone]}`} role={tone === "danger" ? "alert" : undefined}>
+      <Icon size={18} className={styles.noticeIcon} />
+      <div className={styles.noticeBody}>
+        {title && <p className={styles.noticeTitle}>{title}</p>}
+        {children && <div className={title ? styles.noticeTextWithTitle : ""}>{children}</div>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className={styles.noticeAction}>{action}</div>}
     </div>
   );
 }
@@ -295,11 +296,11 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center px-6 py-14 text-center">
-      {icon && <span className="mb-4 grid size-12 place-items-center rounded-full bg-canvas text-ink-2">{icon}</span>}
-      <p className="font-semibold">{title}</p>
-      {children && <div className="mt-1 max-w-md text-sm text-ink-2">{children}</div>}
-      {action && <div className="mt-5">{action}</div>}
+    <div className={styles.emptyState}>
+      {icon && <span className={styles.emptyIcon}>{icon}</span>}
+      <p className={styles.emptyTitle}>{title}</p>
+      {children && <div className={styles.emptyDesc}>{children}</div>}
+      {action && <div className={styles.emptyAction}>{action}</div>}
     </div>
   );
 }
@@ -335,19 +336,17 @@ export function Modal({
       // one would close both. Only react to our own.
       onClose={(event) => event.target === event.currentTarget && onClose()}
       onClick={(event) => event.target === event.currentTarget && onClose()}
-      className={`m-auto max-h-[90dvh] w-[calc(100vw-2rem)] rounded-[16px] bg-paper p-0 text-ink shadow-2xl backdrop:bg-ink/40 open:flex ${
-        size === "lg" ? "max-w-3xl" : "max-w-lg"
-      }`}
+      className={`${styles.modal} ${size === "lg" ? styles.modalLg : styles.modalMd}`}
     >
-      <div className="flex max-h-[90dvh] w-full flex-col">
-        <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-          <h2 className="font-semibold">{title}</h2>
-          <button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-full hover:bg-canvas" aria-label="Close">
+      <div className={styles.modalInner}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>{title}</h2>
+          <button type="button" onClick={onClose} className={styles.modalClose} aria-label="Close">
             <X size={18} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">{children}</div>
-        {footer && <div className="flex justify-end gap-2 border-t border-line px-5 py-4">{footer}</div>}
+        <div className={styles.modalBody}>{children}</div>
+        {footer && <div className={styles.modalFooter}>{footer}</div>}
       </div>
     </dialog>
   );
@@ -412,7 +411,7 @@ export function ConfirmButton({
           </>
         }
       >
-        <div className="text-sm leading-relaxed text-ink-2">{description}</div>
+        <div className={styles.confirmDesc}>{description}</div>
       </Modal>
     </>
   );
@@ -433,13 +432,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4" aria-live="polite">
+      <div className={styles.toastStack} aria-live="polite">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex max-w-md items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium shadow-lg ${
-              toast.tone === "danger" ? "bg-danger text-white" : "bg-ink text-paper"
-            }`}
+            className={`${styles.toast} ${toast.tone === "danger" ? styles.toastDanger : styles.toastDefault}`}
             role={toast.tone === "danger" ? "alert" : "status"}
           >
             {toast.tone === "success" ? <CircleCheck size={16} /> : toast.tone === "danger" ? <CircleAlert size={16} /> : <Info size={16} />}

@@ -26,6 +26,11 @@ export const currentAdmin = cache(async (): Promise<AdminUser | null> => {
 const currentViewer = cache(async (): Promise<{ user: AdminUser; preview: boolean } | null> => {
   const admin = await currentAdmin();
   if (admin) return { user: admin, preview: false };
+  // Never silently downgrade a signed-in account to the public read-only
+  // preview. A valid Supabase session without an admin grant must be sent
+  // back to sign-in; otherwise the dashboard looks usable but every write
+  // is deliberately rejected by previewAdminApi().
+  if (await getBackend().auth.currentUser()) return null;
   if (await isPreviewSession()) return { user: PREVIEW_USER, preview: true };
   return null;
 });

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { demoCatalog, demoSettings } from "@/lib/demo/seed";
+import { demoCatalog, demoSettings, stripDemoSettings } from "@/lib/demo/seed";
 import {
   groupingInputSchema,
   issuesByPath,
@@ -17,7 +17,7 @@ import type { Grouping, Order, OrderStatus, PaymentStatus, Product } from "@/lib
 import { adminOrThrow, UnauthorizedError } from "@/server/admin";
 import { getBackend } from "@/server/backend";
 import { ConflictError, NotFoundError, type AdminApi, type GroupingKind } from "@/server/backend/types";
-import { adminSetupToken, isProduction } from "@/server/env";
+import { adminSetupToken, backendKind, isProduction, publicDemoMode } from "@/server/env";
 import { orphanedMedia } from "@/server/media";
 import { duplicateProduct, prepareProduct, ProductInputError } from "@/server/products";
 import { rateLimit } from "@/server/rate-limit";
@@ -79,7 +79,7 @@ export async function signInAction(_previous: unknown, form: FormData): Promise<
   const parsed = credentialsSchema.safeParse({ email: form.get("email"), password: form.get("password") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  const limit = rateLimit(`signin:${await clientAddress()}`, 10, 15 * 60 * 1000);
+  const limit = await rateLimit(`signin:${await clientAddress()}`, 10, 15 * 60 * 1000);
   if (!limit.ok) return { error: "Too many attempts. Wait a few minutes and try again." };
 
   const result = await getBackend().auth.signIn(parsed.data.email, parsed.data.password);
@@ -382,6 +382,17 @@ export async function discardStaleHandoffsAction(): Promise<ActionResult<{ disca
   }
 }
 
+export async function anonymizeOrderAction(id: string): Promise<ActionResult<Order>> {
+  try {
+    const admin = await adminOrThrow();
+    const updated = await admin.anonymizeOrder(id);
+    revalidatePath("/admin", "layout");
+    return { ok: true, data: updated };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
 export async function deleteOrderAction(id: string): Promise<ActionResult> {
   try {
     const admin = await adminOrThrow();
@@ -439,6 +450,12 @@ export async function saveSettingsAction<K extends SettingsSection>(
 /* ---------------------------------------------------------- demo content */
 
 export async function loadDemoAction(options: { includeSettings: boolean }): Promise<ActionResult<{ products: number }>> {
+  if (backendKind() === "supabase" && isProduction() && !publicDemoMode() && process.env.ALLOW_DEMO_SEED !== "true") {
+    return {
+      ok: false,
+      error: "Loading demo content is disabled on live production stores unless PUBLIC_DEMO_MODE is enabled.",
+    };
+  }
   try {
     const admin = await adminOrThrow();
     const catalog = await admin.loadCatalog();
@@ -477,12 +494,38 @@ export async function loadDemoAction(options: { includeSettings: boolean }): Pro
   }
 }
 
-export async function removeDemoAction(): Promise<ActionResult<{ products: number; categories: number; collections: number }>> {
+export async function removeDemoAction(
+  options: { cleanSettings?: boolean } = {},
+): Promise<ActionResult<{ products: number; categories: number; collections: number; settingsCleaned: number }>> {
   try {
     const admin = await adminOrThrow();
     const removed = await admin.removeDemoContent();
+    let settingsCleaned = 0;
+    if (options.cleanSettings) {
+      const current = await admin.loadSettings();
+      const cleaned = stripDemoSettings(current);
+      if (cleaned.cleanedFields.length > 0) {
+        await admin.saveSettings(cleaned.settings);
+        settingsCleaned = cleaned.cleanedFields.length;
+      }
+    }
     refresh();
-    return { ok: true, data: removed };
+    return { ok: true, data: { ...removed, settingsCleaned } };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function cleanDemoSettingsAction(): Promise<ActionResult<{ cleanedFields: number }>> {
+  try {
+    const admin = await adminOrThrow();
+    const current = await admin.loadSettings();
+    const cleaned = stripDemoSettings(current);
+    if (cleaned.cleanedFields.length > 0) {
+      await admin.saveSettings(cleaned.settings);
+      refresh();
+    }
+    return { ok: true, data: { cleanedFields: cleaned.cleanedFields.length } };
   } catch (error) {
     return failure(error);
   }

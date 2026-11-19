@@ -21,9 +21,15 @@ export async function siteOrigin(settings: StoreSettings): Promise<string> {
 /** Best-effort client address for rate limiting. Never stored. */
 export async function clientAddress(): Promise<string> {
   const list = await headers();
-  return (
-    list.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    list.get("x-real-ip")?.trim() ||
-    "unknown"
-  );
+  const candidates = [
+    list.get("x-vercel-forwarded-for"),
+    list.get("cf-connecting-ip"),
+    list.get("x-real-ip"),
+    list.get("x-forwarded-for")?.split(",")[0],
+  ];
+  for (const raw of candidates) {
+    const value = raw?.trim();
+    if (value && value.length <= 64) return value;
+  }
+  return "unknown";
 }

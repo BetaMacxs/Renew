@@ -122,6 +122,8 @@ export const es: Dictionary = {
     shipping: "Envío",
     shippingAtCheckout: "Se elige al finalizar",
     total: "Total",
+    vatIncluded: (rate, vatNumber) =>
+      vatNumber ? `Incluye ${rate}% IVA (${vatNumber})` : `Incluye ${rate}% IVA`,
     checkout: "Finalizar pedido",
     viewCart: "Ver cesta",
     freeShippingRemaining: (amount) => `Te faltan ${amount} para el envío gratis`,

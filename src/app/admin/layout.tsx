@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "../globals.css";
+import "@/styles/shared.css";
 import { fontVariables } from "../fonts";
+import styles from "@/components/admin/admin.module.css";
 import { ToastProvider } from "@/components/admin/ui";
 import { DEFAULT_SETTINGS } from "@/lib/domain/settings";
 import { themeStyle } from "@/lib/theme";
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f4f4f1" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#0c0d0e" };
 
 export default async function AdminRootLayout({ children }: { children: ReactNode }) {
   let theme = DEFAULT_SETTINGS.theme;
@@ -37,7 +39,7 @@ export default async function AdminRootLayout({ children }: { children: ReactNod
       data-pairing="signage"
       style={themeStyle({ ...theme, fontPairing: "signage" }) as React.CSSProperties}
     >
-      <body className="min-h-dvh bg-canvas text-ink">
+      <body className={styles.adminBody}>
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

@@ -2,12 +2,14 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import "../globals.css";
+import "@/styles/shared.css";
 import { fontVariables } from "../fonts";
 import { CartDrawer } from "@/components/store/CartDrawer";
 import { DemoBar } from "@/components/store/Demo";
 import { Footer } from "@/components/store/Footer";
 import { AnnouncementBar, Header } from "@/components/store/Header";
 import { StoreProvider } from "@/components/store/StoreProvider";
+import styles from "@/components/store/store.module.css";
 import { visibleCategories, visibleCollections } from "@/lib/domain/catalog-query";
 import { directionOf, getDictionary } from "@/lib/i18n";
 import { publicConfigOf } from "@/lib/public-config";
@@ -28,7 +30,7 @@ export const dynamic = "force-dynamic";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#ffffff",
+  themeColor: "#0c0d0e",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -52,7 +54,7 @@ export async function generateMetadata(): Promise<Metadata> {
       twitter: { card: "summary_large_image" },
     };
   } catch {
-    return { title: "Store" };
+    return { title: "Detail Corner — The Art of Perfection" };
   }
 }
 
@@ -80,18 +82,15 @@ export default async function StoreLayout({ children }: { children: ReactNode })
       className={fontVariables}
       style={themeStyle(settings.theme) as React.CSSProperties}
     >
-      <body className="flex min-h-dvh flex-col">
+      <body className={styles.storeBody}>
         <StoreProvider config={publicConfigOf(settings)}>
-          <a
-            href="#main"
-            className="sr-only z-50 rounded-[var(--radius-control)] bg-ink px-4 py-2 text-paper focus:not-sr-only focus:fixed focus:start-3 focus:top-3"
-          >
+          <a href="#main" className="skip-link">
             {t.common.skipToContent}
           </a>
           {publicDemoMode() && <DemoBar storeName={settings.store.name} t={t} />}
           <AnnouncementBar settings={settings} />
           <Header settings={settings} categories={categories} collections={collections} t={t} />
-          <main id="main" className="flex-1">
+          <main id="main" className={styles.storeMain}>
             {children}
           </main>
           <Footer settings={settings} categories={categories} t={t} hasDemoContent={hasDemoContent} />
@@ -106,15 +105,15 @@ export default async function StoreLayout({ children }: { children: ReactNode })
 function SetupNeeded() {
   return (
     <html lang="en" className={fontVariables}>
-      <body className="grid min-h-dvh place-items-center bg-canvas p-6">
-        <main className="max-w-md rounded-[14px] border border-line bg-paper p-8">
+      <body className={styles.setupBody}>
+        <main className={styles.setupCard}>
           <p className="eyebrow">Store not connected</p>
-          <h1 className="mt-3 text-2xl font-semibold">The store can&apos;t reach its database</h1>
-          <p className="mt-3 text-sm leading-relaxed text-ink-2">
+          <h1 className={styles.setupTitle}>The store can&apos;t reach its database</h1>
+          <p className={styles.setupText}>
             If you&apos;re the owner, open the dashboard to see what&apos;s missing — usually a Supabase key in the
             environment variables, or the database setup script that hasn&apos;t been run yet.
           </p>
-          <Link href="/admin" className="mt-6 inline-block text-sm font-semibold underline underline-offset-4">
+          <Link href="/admin" className={styles.setupLink}>
             Open the dashboard
           </Link>
         </main>

@@ -1,228 +1,350 @@
-@import "tailwindcss";
-
 /*
  * ============================================================================
- *  DESIGN TOKENS
+ *  DETAIL CORNER — CENTRAL DESIGN SYSTEM & TOKENS
  * ============================================================================
- *
- *  Neutrals are fixed; the accent, the display face and the corner radius
- *  come from the owner's theme (see src/lib/theme.ts) as CSS variables set on
- *  <html>. Tailwind utilities like `bg-accent` and `rounded-card` read them.
+ *  Brand Identity: Obsidian & Crimson
+ *  Typography: Plus Jakarta Sans (display) · Inter (body) · Geist Mono (data)
  */
 
-:root {
-  --paper: #ffffff;
-  --canvas: #f4f4f1;
-  --tile: #eeeeea;
-  --ink: #161614;
-  --ink-2: #4b4b46;
-  --ink-3: #75756e;
-  --line: #e1e1db;
-  --line-strong: #c9c9c2;
-
-  --success: #1d6b45;
-  --success-soft: #e6f2eb;
-  --warning: #9a5b00;
-  --warning-soft: #fbf0dc;
-  --danger: #b4322a;
-  --danger-soft: #fbe9e7;
-  --info: #24539c;
-  --info-soft: #e8eef8;
-
-  /* Overridden per store by themeStyle(). */
-  --accent: #0f4c5c;
-  --accent-ink: #ffffff;
-  --accent-text: #0f4c5c;
-  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
-  --display-transform: uppercase;
-  --display-stretch: 125%;
-  --display-tracking: 0.005em;
-  --display-weight: 800;
-  --radius-card: 14px;
-  --radius-control: 10px;
-  --radius-pill: 999px;
-
-  --header-height: 64px;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-paper: var(--paper);
-  --color-canvas: var(--canvas);
-  --color-tile: var(--tile);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
-  --color-accent-text: var(--accent-text);
-  --color-accent-soft: color-mix(in srgb, var(--accent) 10%, white);
-  --color-success: var(--success);
-  --color-success-soft: var(--success-soft);
-  --color-warning: var(--warning);
-  --color-warning-soft: var(--warning-soft);
-  --color-danger: var(--danger);
-  --color-danger-soft: var(--danger-soft);
-  --color-info: var(--info);
-  --color-info-soft: var(--info-soft);
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+}
 
-  --font-sans: var(--font-archivo), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display);
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-feature-settings: "ss01" 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+figure,
+dl,
+dd,
+dt,
+pre {
+  margin: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+/* ------------------------------------------------------------------- tokens */
+
+:root {
+  /* Core Detail Corner Obsidian & Crimson Palette */
+  --bg: #0c0d0e;
+  --bg-header: whitesmoke;
+  --surface: #141618;
+  --surface-hover: #1b1e22;
+  --surface-elevated: #202428;
+
+  --accent: #c41e3a;
+  --accent-hover: #dc2626;
+  --gold: #d4a853;
+
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Semantic Aliases */
+  --paper: var(--surface);
+  --canvas: var(--bg);
+  --tile: var(--surface-elevated);
+  --ink: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-3: var(--text-muted);
+  --line: var(--border);
+  --line-strong: var(--border-strong);
+
+  --accent-ink: #ffffff;
+  --accent-text: #df5a6f;
+  --accent-soft: color-mix(in srgb, var(--accent) 16%, var(--surface));
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.12);
+  --warning: var(--gold);
+  --warning-soft: rgba(212, 168, 83, 0.14);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+  --info: #60a5fa;
+  --info-soft: rgba(96, 165, 250, 0.14);
+  --whatsapp: #127c45;
+  --whatsapp-hover: #0f6a3b;
+
+  /* Typography */
+  --font-sans: var(--font-inter), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-plex-arabic), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --radius-card: var(--radius-card);
-  --radius-control: var(--radius-control);
-  --radius-pill: var(--radius-pill);
+  --display-transform: none;
+  --display-stretch: 100%;
+  --display-tracking: -0.025em;
+  --display-weight: 700;
+
+  /* Radii & Layout */
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-pill: 999px;
+  --header-height: 64px;
+  --container-max: 90rem;
 }
 
-/* ------------------------------------------------------------------- base */
+/* --------------------------------------------------------------------- base */
 
-@layer base {
-  html {
-    -webkit-text-size-adjust: 100%;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-  }
+::selection {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text-primary);
+}
 
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--font-sans);
-    font-feature-settings: "ss01" 0;
-  }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 
-  ::selection {
-    background: color-mix(in srgb, var(--accent) 22%, white);
-    color: var(--ink);
-  }
+dialog {
+  color: var(--text-primary);
+}
 
-  :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-    border-radius: 2px;
-  }
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+}
 
-  [dir="rtl"] .flip-rtl {
-    transform: scaleX(-1);
-  }
+[dir="rtl"] .flip-rtl {
+  transform: scaleX(-1);
+}
 
-  input,
-  select,
-  textarea,
-  button {
-    font: inherit;
-  }
+/* -------------------------------------------------------------- type system */
 
-  dialog::backdrop {
-    background: rgb(22 22 20 / 0.45);
+.display {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  font-variation-settings: normal;
+  text-transform: var(--display-transform);
+  letter-spacing: var(--display-tracking);
+  font-weight: var(--display-weight);
+  line-height: 1.04;
+}
+
+.price {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+[lang="ar"] .eyebrow {
+  letter-spacing: 0;
+}
+
+/* Long-form text an owner writes: descriptions and policy pages. */
+.prose-store {
+  line-height: 1.68;
+  color: var(--text-secondary);
+}
+
+.prose-store p + p,
+.prose-store ul + p,
+.prose-store p + ul {
+  margin-top: 0.9em;
+}
+
+.prose-store ul {
+  list-style: disc;
+  padding-inline-start: 1.2em;
+}
+
+.prose-store li + li {
+  margin-top: 0.3em;
+}
+
+.prose-store h3 {
+  margin-top: 1.4em;
+  margin-bottom: 0.4em;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* A receipt edge: the zig-zag of torn thermal paper. */
+.receipt-edge {
+  --tooth: 9px;
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--tooth)) 100%;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+  z-index: 50;
+  border-radius: var(--radius-control);
+  background: var(--text-primary);
+  color: var(--bg);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 0.75rem;
+  inset-inline-start: 0.75rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+@keyframes dc-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-/* ------------------------------------------------------------ type system */
-
-@layer components {
-  /*
-   * The display voice: shop signage. In the default "signage" pairing it is
-   * Archivo at full width and heavy weight, set in capitals; other pairings
-   * swap the face and drop the capitals.
-   */
-  .display {
-    font-family: var(--font-display);
-    font-stretch: var(--display-stretch);
-    font-variation-settings: "wdth" 125;
-    text-transform: var(--display-transform);
-    letter-spacing: var(--display-tracking);
-    font-weight: var(--display-weight);
-    line-height: 0.98;
-  }
-
-  /* Prices read like price signage: wide, tabular, never wrapping. */
-  .price {
-    font-family: var(--font-archivo), var(--font-plex-arabic), sans-serif;
-    font-stretch: 112%;
-    font-variation-settings: "wdth" 112;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-
-  .eyebrow {
-    font-size: 0.75rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-weight: 600;
-    color: var(--ink-3);
-  }
-
-  [lang="ar"] .eyebrow {
-    letter-spacing: 0;
-  }
-
-  /* Long-form text an owner writes: descriptions and policy pages. */
-  .prose-store {
-    line-height: 1.65;
-    color: var(--ink-2);
-  }
-  .prose-store p + p,
-  .prose-store ul + p,
-  .prose-store p + ul {
-    margin-top: 0.9em;
-  }
-  .prose-store ul {
-    list-style: disc;
-    padding-inline-start: 1.2em;
-  }
-  .prose-store li + li {
-    margin-top: 0.3em;
-  }
-  .prose-store h3 {
-    margin-top: 1.4em;
-    margin-bottom: 0.4em;
-    color: var(--ink);
-    font-weight: 600;
-  }
-
-  /* A receipt edge: the zig-zag of torn thermal paper. */
-  .receipt-edge {
-    --tooth: 9px;
-    mask:
-      conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--tooth)) 100%;
-  }
-
-  .scrollbar-none {
-    scrollbar-width: none;
-  }
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
+.animate-spin {
+  animation: dc-spin 1s linear infinite;
 }
 
 /* Drawers slide in from the side they are anchored to (see Drawer.tsx). */
 dialog.drawer-end[open] {
   animation: drawer-from-end 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
 dialog.drawer-start[open] {
   animation: drawer-from-start 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
 [dir="rtl"] dialog.drawer-end[open] {
   animation-name: drawer-from-start;
 }
+
 [dir="rtl"] dialog.drawer-start[open] {
   animation-name: drawer-from-end;
 }
+
 @keyframes drawer-from-end {
   from {
     transform: translateX(100%);
   }
 }
+
 @keyframes drawer-from-start {
   from {
     transform: translateX(-100%);
   }
 }
 
-/* The editorial and friendly pairings have no width axis to set. (Not tied
-   to :root, so the dashboard's theme preview can show them too.) */
 [data-pairing="editorial"] .display,
 [data-pairing="friendly"] .display {
   font-variation-settings: normal;

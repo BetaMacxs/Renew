@@ -5,6 +5,7 @@ import { imageAlt, isNewArrival, isSoldOut, primaryImage, priceSummary, secondar
 import type { Product } from "@/lib/domain/types";
 import type { Dictionary } from "@/lib/i18n";
 import { Price } from "./Price";
+import styles from "./store.module.css";
 
 /**
  * A product in a grid. Rendered on the server: the whole card is one link,
@@ -33,8 +34,8 @@ export function ProductCard({
     ?.values.filter((value) => value.swatch);
 
   return (
-    <Link href={`/products/${product.slug}`} className="group flex flex-col gap-3 outline-none">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-card bg-tile ring-accent/60 group-focus-visible:ring-2">
+    <Link href={`/products/${product.slug}`} className={styles.productCard}>
+      <div className={styles.productCardMedia}>
         {image ? (
           <>
             <Image
@@ -43,9 +44,9 @@ export function ProductCard({
               fill
               priority={priority}
               sizes="(min-width: 1280px) 300px, (min-width: 768px) 30vw, 48vw"
-              className={`object-cover transition-[opacity,transform] duration-500 ease-out ${
-                hover ? "group-hover:opacity-0" : "group-hover:scale-[1.03]"
-              } ${soldOut ? "opacity-70" : ""}`}
+              className={`${styles.productCardImg} ${hover ? styles.productCardImgSwap : styles.productCardImgZoom} ${
+                soldOut ? styles.productCardImgSoldOut : ""
+              }`.trim()}
             />
             {hover && (
               <Image
@@ -53,34 +54,26 @@ export function ProductCard({
                 alt=""
                 fill
                 sizes="(min-width: 1280px) 300px, (min-width: 768px) 30vw, 48vw"
-                className="object-cover opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
+                className={styles.productCardImgHover}
               />
             )}
           </>
         ) : (
-          <div className="absolute inset-0 grid place-items-center text-xs text-ink-3">{product.name}</div>
+          <div className={styles.productCardPlaceholder}>{product.name}</div>
         )}
-        <div className="absolute inset-x-2.5 top-2.5 flex flex-wrap gap-1.5">
+        <div className={styles.productCardBadges}>
           {soldOut ? (
-            <span className="rounded-[var(--radius-pill)] bg-paper/95 px-2.5 py-1 text-[0.7rem] font-semibold text-ink">
-              {t.product.soldOut}
-            </span>
+            <span className={styles.badgePill}>{t.product.soldOut}</span>
           ) : price.discount !== null ? (
-            <span className="price rounded-[var(--radius-pill)] bg-accent px-2.5 py-1 text-[0.7rem] font-bold text-accent-ink">
-              {t.product.save(price.discount)}
-            </span>
+            <span className={`price ${styles.badgePillSale}`}>{t.product.save(price.discount)}</span>
           ) : isNew ? (
-            <span className="rounded-[var(--radius-pill)] bg-paper/95 px-2.5 py-1 text-[0.7rem] font-semibold text-ink">
-              {t.product.newBadge}
-            </span>
+            <span className={styles.badgePill}>{t.product.newBadge}</span>
           ) : null}
         </div>
       </div>
-      <div className="flex flex-col gap-1 px-0.5">
-        <h3 className="text-[0.95rem] font-medium leading-snug text-ink underline-offset-4 group-hover:underline">
-          {product.name}
-        </h3>
-        <div className="flex items-center justify-between gap-3">
+      <div className={styles.productCardMeta}>
+        <h3 className={styles.productCardTitle}>{product.name}</h3>
+        <div className={styles.productCardPriceRow}>
           <Price
             amount={price.min}
             compareAt={price.compareAt}
@@ -90,11 +83,11 @@ export function ProductCard({
             size="sm"
           />
           {swatches && swatches.length > 1 && (
-            <span className="flex shrink-0 -space-x-1 rtl:space-x-reverse" aria-hidden="true">
+            <span className={styles.swatchStack} aria-hidden="true">
               {swatches.slice(0, 4).map((value) => (
                 <span
                   key={value.label}
-                  className="size-3.5 rounded-full border border-paper ring-1 ring-line-strong"
+                  className={styles.swatchDot}
                   style={{ background: value.swatch ?? undefined }}
                 />
               ))}
@@ -120,11 +113,7 @@ export function ProductGrid({
   columns?: "default" | "wide";
 }) {
   return (
-    <ul
-      className={`grid grid-cols-2 gap-x-4 gap-y-9 sm:gap-x-6 ${
-        columns === "wide" ? "md:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-3 lg:grid-cols-4"
-      }`}
-    >
+    <ul className={`${styles.productGrid} ${columns === "wide" ? styles.productGridWide : styles.productGridDefault}`}>
       {products.map((product, index) => (
         <li key={product.id}>
           <ProductCard product={product} money={money} t={t} priority={index < priorityCount} />

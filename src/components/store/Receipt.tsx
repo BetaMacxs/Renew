@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import styles from "./store.module.css";
 
 /**
  * The order summary as a receipt: amounts in a monospace face on dotted
@@ -9,9 +10,9 @@ import type { ReactNode } from "react";
 
 export function Receipt({ title, children, footer }: { title: ReactNode; children: ReactNode; footer?: ReactNode }) {
   return (
-    <div className="drop-shadow-[0_1px_0_rgb(0_0_0/0.06)]">
-      <div className="receipt-edge rounded-t-[var(--radius-card)] bg-canvas px-5 pb-8 pt-5 sm:px-6">
-        <p className="eyebrow mb-4">{title}</p>
+    <div className={styles.receiptOuter}>
+      <div className={`receipt-edge ${styles.receiptCard}`}>
+        <p className={`eyebrow ${styles.receiptTitle}`}>{title}</p>
         {children}
         {footer}
       </div>
@@ -33,17 +34,21 @@ export function ReceiptLine({
   muted?: boolean;
 }) {
   return (
-    <div className={`py-1.5 ${strong ? "text-base font-semibold" : "text-sm"} ${muted ? "text-ink-3" : ""}`}>
-      <div className="flex items-baseline gap-2">
-        <span className="min-w-0 shrink">{label}</span>
-        <span className="mb-1 min-w-4 flex-1 border-b border-dotted border-line-strong" aria-hidden="true" />
-        <span className="shrink-0 font-mono tabular-nums">{amount}</span>
+    <div
+      className={`${styles.receiptLine} ${strong ? styles.receiptLineStrong : ""} ${
+        muted ? styles.receiptLineMuted : ""
+      }`.trim()}
+    >
+      <div className={styles.receiptLineTop}>
+        <span className={styles.receiptLineLabel}>{label}</span>
+        <span className={styles.receiptDots} aria-hidden="true" />
+        <span className="mono">{amount}</span>
       </div>
-      {detail && <div className="mt-0.5 text-xs text-ink-3">{detail}</div>}
+      {detail && <div className={styles.receiptDetail}>{detail}</div>}
     </div>
   );
 }
 
 export function ReceiptRule() {
-  return <div className="my-3 border-t border-dashed border-line-strong" aria-hidden="true" />;
+  return <div className={styles.receiptRule} aria-hidden="true" />;
 }

@@ -53,7 +53,7 @@ test("Arabic turns the whole shop right-to-left", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");
   await expectNoHorizontalScroll(page);
 
-  await addToBag(page, "canvas-tote");
+  await addToBag(page, "premium-microfibre-wash-mitt");
   await page.goto("/checkout");
   await expect(page.getByRole("heading", { level: 1 })).not.toHaveText(/Checkout/);
   await expectNoHorizontalScroll(page);
@@ -113,21 +113,21 @@ test("checkout methods and delivery prices follow the settings", async ({ page }
 
   await page.goto("/admin/settings#delivery");
   const standard = page.locator("form#delivery").getByLabel("Price").first();
-  await standard.fill("7");
+  await standard.fill("120");
   await savePanel(page, "delivery", "Delivery options saved");
 
-  await addToBag(page, "canvas-tote");
+  await addToBag(page, "premium-microfibre-wash-mitt");
   await page.goto("/checkout");
   await expect(page.getByRole("radio", { name: /Pay on delivery/ })).toBeVisible();
   await expect(page.getByRole("radio", { name: /Bank transfer/ })).toHaveCount(0);
   await expect(page.getByRole("radio", { name: /Standard delivery/ })).toBeVisible();
-  await expect(page.locator("label").filter({ hasText: "Standard delivery" })).toContainText("$7");
+  await expect(page.locator("label").filter({ hasText: "Standard delivery" })).toContainText("R120");
 
   await page.goto("/admin/settings#checkout");
   await page.locator("form#checkout").getByRole("switch", { name: /bank transfer/ }).click();
   await savePanel(page, "checkout", "Checkout saved");
   await page.goto("/admin/settings#delivery");
-  await page.locator("form#delivery").getByLabel("Price").first().fill("6");
+  await page.locator("form#delivery").getByLabel("Price").first().fill("100");
   await savePanel(page, "delivery", "Delivery options saved");
 });
 

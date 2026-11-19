@@ -13,11 +13,11 @@ export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
 export default async function Icon() {
-  let letter = "S";
-  let accent = "#0F4C5C";
+  let letter = "D";
+  let accent = "#C41E3A";
   try {
     const { settings } = await getStorefront();
-    letter = (settings.store.name.trim()[0] ?? "S").toUpperCase();
+    letter = (settings.store.name.trim()[0] ?? "D").toUpperCase();
     accent = settings.theme.accent;
   } catch {
     // Fall back to the defaults if the store cannot be loaded.

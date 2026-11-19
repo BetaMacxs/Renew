@@ -9,6 +9,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { CartLines, FreeShippingMeter } from "./CartLines";
 import { CheckoutLink } from "./CheckoutLink";
 import { useStore } from "./StoreProvider";
+import styles from "./store.module.css";
 
 export function CartDrawer() {
   const open = useCartDrawer();
@@ -20,22 +21,26 @@ export function CartDrawer() {
 
   const footer =
     lines.length > 0 && quote ? (
-      <div className="space-y-4">
-        <div className="flex items-baseline justify-between">
-          <span className="text-sm text-ink-2">{t.cart.subtotal}</span>
-          <span className="price text-lg font-semibold">{money(quote.subtotal, "full")}</span>
+      <div className={styles.cartDrawerFooter}>
+        <div className={styles.cartSubtotalRow}>
+          <span className={styles.cartSubtotalLabel}>{t.cart.subtotal}</span>
+          <span className={`price ${styles.cartSubtotalValue}`}>{money(quote.subtotal, "full")}</span>
         </div>
-        <p className="text-xs text-ink-3">
+        <p className={styles.cartShippingNote}>
           {t.cart.shipping}: {t.cart.shippingAtCheckout}
         </p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={styles.cartActionsGrid}>
           <Link href="/cart" onClick={close} className={buttonClass({ variant: "outline", full: true })}>
             {t.cart.viewCart}
           </Link>
           <CheckoutLink
             onClick={close}
             aria-disabled={!quote.orderable}
-            className={buttonClass({ variant: "primary", full: true, className: !quote.orderable ? "pointer-events-none opacity-50" : "" })}
+            className={buttonClass({
+              variant: "primary",
+              full: true,
+              className: !quote.orderable ? styles.cartDisabledLink : "",
+            })}
           >
             {t.cart.checkout}
           </CheckoutLink>
@@ -48,36 +53,36 @@ export function CartDrawer() {
       open={open}
       onClose={close}
       title={
-        <span className="inline-flex items-center gap-2">
+        <span className={styles.cartDrawerTitle}>
           {t.cart.title}
-          {quote && quote.itemCount > 0 && <span className="text-ink-3">({quote.itemCount})</span>}
+          {quote && quote.itemCount > 0 && <span className={styles.cartDrawerCount}>({quote.itemCount})</span>}
         </span>
       }
       closeLabel={t.common.close}
       footer={footer}
     >
-      <div className="px-5 py-4">
+      <div className={styles.cartDrawerBody}>
         {!hydrated || (lines.length > 0 && !quote && !failed) ? (
-          <p className="py-10 text-center text-sm text-ink-3" role="status">
+          <p className={styles.cartStatusMsg} role="status">
             {t.common.loading}
           </p>
         ) : lines.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <span className="grid size-14 place-items-center rounded-full bg-canvas">
-              <ShoppingBag size={22} className="text-ink-2" />
+          <div className={styles.cartEmptyWrap}>
+            <span className={styles.cartEmptyIcon}>
+              <ShoppingBag size={22} />
             </span>
             <div>
-              <p className="font-semibold">{t.cart.empty}</p>
-              <p className="mt-1 text-sm text-ink-3">{t.cart.emptyText}</p>
+              <p className={styles.cartEmptyTitle}>{t.cart.empty}</p>
+              <p className={styles.cartEmptyText}>{t.cart.emptyText}</p>
             </div>
             <Link href="/shop" onClick={close} className={buttonClass({ variant: "dark" })}>
               {t.common.continueShopping}
             </Link>
           </div>
         ) : failed && !quote ? (
-          <p className="py-10 text-center text-sm text-danger">{t.cart.quoteFailed}</p>
+          <p className={styles.cartErrorMsg}>{t.cart.quoteFailed}</p>
         ) : quote ? (
-          <div className={`space-y-3 transition-opacity ${loading ? "opacity-60" : ""}`}>
+          <div className={`${styles.cartContent} ${loading ? styles.cartContentLoading : ""}`.trim()}>
             <FreeShippingMeter quote={quote} />
             <CartLines quote={quote} compact />
           </div>

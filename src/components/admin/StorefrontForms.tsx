@@ -25,6 +25,7 @@ import {
 } from "@/lib/domain/settings";
 import { ACCENT_PRESETS, accentText, readableOn, themeStyle } from "@/lib/theme";
 import { uid } from "@/lib/uid";
+import styles from "./admin.module.css";
 import { ImagePicker } from "./ImagePicker";
 import { errorsUnder, SettingsPanel, useSettingsDraft } from "./settings-kit";
 import { Notice, Pill, SelectField, TextAreaField, TextField, Toggle } from "./ui";
@@ -50,9 +51,9 @@ function LinkSuggestions({ id, links }: { id: string; links: LinkSuggestion[] })
 /* ------------------------------------------------------------------ theme */
 
 const PAIRINGS: Record<Theme["fontPairing"], { name: string; text: string }> = {
-  signage: { name: "Signage", text: "Wide capitals, like the sign above a shop." },
-  editorial: { name: "Editorial", text: "A high-contrast serif for fashion, beauty and home." },
-  friendly: { name: "Friendly", text: "A warm grotesque for everyday goods." },
+  signage: { name: "Signage", text: "Geometric sans capitals and display clarity." },
+  editorial: { name: "Editorial", text: "High-contrast elegance for flagship releases." },
+  friendly: { name: "Friendly", text: "Clean humanist warmth for everyday browsing." },
 };
 
 const CORNERS: Record<Theme["corners"], string> = { sharp: "Sharp", soft: "Soft", round: "Round" };
@@ -66,7 +67,7 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
   const form = useSettingsDraft({
     read: (settings) => settings.theme,
     write: (draft) => ({ section: "theme", value: draft }),
-    validate: (draft) => (isHex(draft.accent) ? {} : { accent: "Use a 6-digit hex colour like #0F4C5C" }),
+    validate: (draft) => (isHex(draft.accent) ? {} : { accent: "Use a 6-digit hex colour like #C41E3A" }),
     saved: "Theme saved",
   });
   const { draft, patch, errors } = form;
@@ -77,7 +78,7 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
     setHexText(draft.accent);
   }
   const preset = ACCENT_PRESETS.find((candidate) => candidate.value.toLowerCase() === draft.accent.toLowerCase());
-  const previewTheme = isHex(draft.accent) ? draft : { ...draft, accent: "#0F4C5C" };
+  const previewTheme = isHex(draft.accent) ? draft : { ...draft, accent: "#C41E3A" };
 
   return (
     <SettingsPanel
@@ -90,11 +91,11 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
       onReset={form.reset}
       testId="storefront-theme"
     >
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="space-y-7">
+      <div className={styles.themeGrid}>
+        <div className={styles.stack7}>
           <fieldset>
-            <legend className="mb-2 text-sm font-medium">Accent colour</legend>
-            <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Accent colour">
+            <legend className={styles.fieldsetTitle}>Accent colour</legend>
+            <div className={styles.swatchRow} role="radiogroup" aria-label="Accent colour">
               {ACCENT_PRESETS.map((option) => {
                 const selected = option.value === preset?.value;
                 return (
@@ -106,24 +107,18 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
                     aria-label={option.name}
                     title={option.name}
                     onClick={() => patch({ accent: option.value })}
-                    className={`grid size-10 place-items-center rounded-full border-2 transition-colors ${
-                      selected ? "border-ink" : "border-transparent hover:border-line-strong"
-                    }`}
+                    className={`${styles.swatchBtn} ${selected ? styles.swatchBtnSelected : ""}`}
                   >
-                    <span className="size-7 rounded-full" style={{ background: option.value }} />
+                    <span className={styles.swatchDot} style={{ background: option.value }} />
                   </button>
                 );
               })}
-              <label
-                className={`flex h-10 items-center gap-2 rounded-full border-2 ps-1.5 pe-3 text-sm ${
-                  preset ? "border-transparent" : "border-ink"
-                }`}
-              >
+              <label className={`${styles.customColorLabel} ${!preset ? styles.customColorLabelSelected : ""}`}>
                 <input
                   type="color"
-                  value={isHex(draft.accent) ? draft.accent : "#0F4C5C"}
+                  value={isHex(draft.accent) ? draft.accent : "#C41E3A"}
                   onChange={(event) => patch({ accent: event.target.value.toUpperCase() })}
-                  className="size-7 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch-wrapper]:p-0"
+                  className={styles.customColorInput}
                   aria-label="Pick a custom colour"
                 />
                 Custom
@@ -131,7 +126,7 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
             </div>
             <TextField
               label="Hex code"
-              className="mt-4 max-w-40"
+              className={`${styles.mt4} ${styles.maxW40}`}
               value={hexText}
               maxLength={7}
               error={errors.accent}
@@ -144,15 +139,15 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
               spellCheck={false}
             />
             {isHex(draft.accent) && accentText(draft.accent) !== draft.accent && (
-              <p className="mt-2 text-xs text-ink-3">
-                A light colour: it fills buttons and badges, while links and small text use dark ink so they stay readable.
+              <p className={styles.fieldHint}>
+                Adjusted for contrast: buttons fill with your colour, while links and small text automatically shift so they stay readable.
               </p>
             )}
           </fieldset>
 
           <fieldset>
-            <legend className="mb-2 text-sm font-medium">Type</legend>
-            <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Type">
+            <legend className={styles.fieldsetTitle}>Type</legend>
+            <div className={styles.pairingGrid} role="radiogroup" aria-label="Type">
               {FONT_PAIRINGS.map((pairing) => {
                 const selected = draft.fontPairing === pairing;
                 return (
@@ -164,13 +159,11 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
                     onClick={() => patch({ fontPairing: pairing })}
                     data-pairing={pairing}
                     style={themeStyle({ ...previewTheme, fontPairing: pairing }) as CSSProperties}
-                    className={`rounded-[12px] border-2 p-4 text-start transition-colors ${
-                      selected ? "border-ink bg-canvas" : "border-line hover:border-line-strong"
-                    }`}
+                    className={`${styles.choiceCard} ${selected ? styles.choiceCardSelected : ""}`}
                   >
-                    <span className="display block text-2xl">New in</span>
-                    <span className="mt-3 block text-sm font-semibold">{PAIRINGS[pairing].name}</span>
-                    <span className="mt-0.5 block text-xs text-ink-3">{PAIRINGS[pairing].text}</span>
+                    <span className={`display ${styles.pairingSample}`}>New in</span>
+                    <span className={styles.pairingName}>{PAIRINGS[pairing].name}</span>
+                    <span className={styles.pairingDesc}>{PAIRINGS[pairing].text}</span>
                   </button>
                 );
               })}
@@ -178,8 +171,8 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
           </fieldset>
 
           <fieldset>
-            <legend className="mb-2 text-sm font-medium">Corners</legend>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Corners">
+            <legend className={styles.fieldsetTitle}>Corners</legend>
+            <div className={styles.cornersRow} role="radiogroup" aria-label="Corners">
               {CORNER_STYLES.map((corners) => {
                 const selected = draft.corners === corners;
                 const radius = corners === "sharp" ? "0" : corners === "soft" ? "8px" : "16px";
@@ -190,12 +183,10 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
                     role="radio"
                     aria-checked={selected}
                     onClick={() => patch({ corners })}
-                    className={`flex items-center gap-3 rounded-[12px] border-2 py-2.5 ps-3 pe-4 text-sm font-medium transition-colors ${
-                      selected ? "border-ink bg-canvas" : "border-line hover:border-line-strong"
-                    }`}
+                    className={`${styles.cornerBtn} ${selected ? styles.cornerBtnSelected : ""}`}
                   >
                     <span
-                      className="size-8 border-2 border-ink-2 bg-paper"
+                      className={styles.cornerSample}
                       style={{ borderRadius: radius, borderEndEndRadius: radius }}
                       aria-hidden
                     />
@@ -216,38 +207,38 @@ export function ThemePanel({ storeName, sample }: { storeName: string; sample: P
 function ThemePreview({ theme, storeName, sample }: { theme: Theme; storeName: string; sample: PreviewProduct | null }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium">Preview</p>
+      <p className={styles.previewLabel}>Preview</p>
       <div
         data-pairing={theme.fontPairing}
         style={themeStyle(theme) as CSSProperties}
-        className="overflow-hidden rounded-[14px] border border-line bg-paper"
+        className={styles.previewCard}
         aria-hidden
       >
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <span className="display truncate text-base">{storeName}</span>
+        <div className={styles.previewHeader}>
+          <span className={`display ${styles.previewStoreName}`}>{storeName}</span>
           <ShoppingBag size={16} />
         </div>
-        <div className="p-4">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-card bg-tile">
+        <div className={styles.previewBody}>
+          <div className={styles.previewImageBox}>
             {sample ? (
-              <Image src={sample.imageUrl} alt="" fill sizes="320px" className="object-cover" />
+              <Image src={sample.imageUrl} alt="" fill sizes="320px" className={styles.imageCover} />
             ) : (
-              <span className="absolute inset-0 grid place-items-center text-xs text-ink-3">Product photo</span>
+              <span className={styles.previewPlaceholder}>Product photo</span>
             )}
             {sample?.discount != null && (
               <span
-                className="price absolute start-2.5 top-2.5 rounded-pill px-2.5 py-1 text-[0.7rem] font-bold"
+                className={`price ${styles.previewSaleBadge}`}
                 style={{ background: theme.accent, color: readableOn(theme.accent) }}
               >
                 Save {sample.discount}%
               </span>
             )}
           </div>
-          <p className="mt-3 text-sm font-medium">{sample?.name ?? "Product name"}</p>
-          <p className="price text-sm text-ink-2">{sample?.price ?? "Price"}</p>
-          <span className={buttonClass({ full: true, className: "mt-3" })}>Add to bag</span>
-          <p className="mt-3 text-xs">
-            <span className="font-semibold underline underline-offset-4" style={{ color: accentText(theme.accent) }}>
+          <p className={styles.previewProductName}>{sample?.name ?? "Product name"}</p>
+          <p className={`price ${styles.previewProductPrice}`}>{sample?.price ?? "Price"}</p>
+          <span className={buttonClass({ full: true, className: styles.mt3 })}>Add to bag</span>
+          <p className={styles.previewLinkWrap}>
+            <span className={styles.previewLink} style={{ color: accentText(theme.accent) }}>
               Delivery and returns
             </span>
           </p>
@@ -279,15 +270,15 @@ export function AnnouncementPanel({ links }: { links: LinkSuggestion[] }) {
       onSave={form.save}
       onReset={form.reset}
     >
-      <div className="space-y-5">
+      <div className={styles.stack5}>
         <Toggle checked={draft.enabled} onChange={(value) => patch({ enabled: value })} label="Show the announcement bar" />
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className={styles.grid2Md}>
           <TextField
             label="Message"
             value={draft.text}
             maxLength={140}
             error={errors.text}
-            placeholder="Free delivery on orders over $75"
+            placeholder="Free delivery on orders over R1,000"
             onChange={(event) => patch({ text: event.target.value })}
           />
           <TextField
@@ -329,15 +320,15 @@ export function HeroPanel({ links }: { links: LinkSuggestion[] }) {
       onReset={form.reset}
       testId="storefront-hero"
     >
-      <div className="space-y-5">
+      <div className={styles.stack5}>
         <Toggle
           checked={draft.enabled}
           onChange={(value) => patch({ enabled: value })}
           label="Show the photo and headline"
           description="When off, the homepage starts with your sections."
         />
-        <div className="grid gap-5 lg:grid-cols-2">
-          <div className="space-y-5">
+        <div className={styles.grid2Lg}>
+          <div className={styles.stack5}>
             <TextField
               label="Small line above the headline"
               optional
@@ -369,11 +360,11 @@ export function HeroPanel({ links }: { links: LinkSuggestion[] }) {
             label="Photo"
             value={draft.imageUrl}
             onChange={(url) => patch({ imageUrl: url })}
-            aspect="aspect-[16/9]"
+            aspect="16/9"
             hint="Landscape, at least 2000 px wide. Without one, the headline stands on its own in large type."
           />
         </div>
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className={styles.grid2Md}>
           <TextField
             label="Main button"
             optional
@@ -559,7 +550,7 @@ export function SectionsPanel({ collections, links }: { collections: GroupingRef
       onReset={form.reset}
       testId="storefront-sections"
     >
-      <ol className="space-y-2">
+      <ol className={styles.stack2}>
         {sections.map((section, index) => {
           const meta = SECTION_TYPES[section.type];
           const expanded = open === section.id;
@@ -568,17 +559,17 @@ export function SectionsPanel({ collections, links }: { collections: GroupingRef
           return (
             <li
               key={section.id}
-              className={`rounded-[12px] border ${Object.keys(sectionErrors).length > 0 ? "border-danger" : "border-line"} ${
-                section.enabled ? "" : "bg-canvas/60"
+              className={`${styles.sectionRow} ${Object.keys(sectionErrors).length > 0 ? styles.sectionRowInvalid : ""} ${
+                !section.enabled ? styles.sectionRowDisabled : ""
               }`}
             >
-              <div className="flex items-center gap-3 px-3 py-2.5">
-                <span className="flex flex-col">
+              <div className={styles.sectionRowTop}>
+                <span className={styles.moveCol}>
                   <button
                     type="button"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
-                    className="grid size-6 place-items-center rounded text-ink-3 hover:bg-canvas hover:text-ink disabled:opacity-30"
+                    className={styles.sectionMoveBtn}
                     aria-label={`Move ${title} up`}
                   >
                     <ArrowUp size={14} />
@@ -587,51 +578,51 @@ export function SectionsPanel({ collections, links }: { collections: GroupingRef
                     type="button"
                     onClick={() => move(index, 1)}
                     disabled={index === sections.length - 1}
-                    className="grid size-6 place-items-center rounded text-ink-3 hover:bg-canvas hover:text-ink disabled:opacity-30"
+                    className={styles.sectionMoveBtn}
                     aria-label={`Move ${title} down`}
                   >
                     <ArrowDown size={14} />
                   </button>
                 </span>
-                <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-canvas text-ink-2">{meta.icon}</span>
+                <span className={styles.sectionIconBadge}>{meta.icon}</span>
                 <button
                   type="button"
                   onClick={() => setOpen(expanded ? null : section.id)}
-                  className="min-w-0 flex-1 text-start"
+                  className={styles.sectionSummaryBtn}
                   aria-expanded={expanded}
                 >
-                  <span className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{title}</span>
+                  <span className={styles.sectionSummaryTitleRow}>
+                    <span className={styles.sectionSummaryTitle}>{title}</span>
                     {!section.enabled && <Pill tone="muted">Hidden</Pill>}
                   </span>
-                  <span className="block truncate text-xs text-ink-3">{summary(section, collections)}</span>
+                  <span className={styles.sectionSummarySub}>{summary(section, collections)}</span>
                 </button>
-                <label className="hidden items-center gap-2 text-xs text-ink-3 sm:flex">
+                <label className={styles.sectionDesktopShow}>
                   <input
                     type="checkbox"
                     checked={section.enabled}
                     onChange={(event) => update(index, { enabled: event.target.checked })}
-                    className="size-4 accent-[var(--accent)]"
+                    className={styles.checkbox}
                   />
                   Show
                 </label>
                 <button
                   type="button"
                   onClick={() => setOpen(expanded ? null : section.id)}
-                  className="grid size-8 place-items-center rounded-[8px] text-ink-2 hover:bg-canvas"
+                  className={styles.sectionChevronBtn}
                   aria-label={expanded ? `Close ${title}` : `Edit ${title}`}
                 >
-                  <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
+                  <ChevronDown size={16} className={`${styles.chevron} ${expanded ? styles.chevronOpen : ""}`} />
                 </button>
               </div>
               {expanded && (
-                <div className="space-y-4 border-t border-line px-4 py-4">
-                  <label className="flex items-center gap-2 text-sm sm:hidden">
+                <div className={styles.sectionExpandedBody}>
+                  <label className={styles.sectionMobileShow}>
                     <input
                       type="checkbox"
                       checked={section.enabled}
                       onChange={(event) => update(index, { enabled: event.target.checked })}
-                      className="size-4 accent-[var(--accent)]"
+                      className={styles.checkbox}
                     />
                     Show this section
                   </label>
@@ -642,11 +633,11 @@ export function SectionsPanel({ collections, links }: { collections: GroupingRef
                     links={links}
                     onChange={(changes) => update(index, changes)}
                   />
-                  <div className="flex justify-end">
+                  <div className={styles.flexEnd}>
                     <button
                       type="button"
                       onClick={() => setDraft((current) => current.filter((_, position) => position !== index))}
-                      className="inline-flex h-8 items-center gap-1 rounded-[8px] px-2 text-sm text-ink-3 hover:bg-canvas hover:text-danger"
+                      className={styles.removeActionBtn}
                     >
                       <Trash2 size={14} /> Remove section
                     </button>
@@ -664,9 +655,9 @@ export function SectionsPanel({ collections, links }: { collections: GroupingRef
 
       {sections.length < 16 &&
         (adding ? (
-          <div className="mt-4 rounded-[12px] border border-dashed border-line-strong p-3">
-            <p className="mb-2 px-1 text-sm font-medium">Add a section</p>
-            <div className="grid gap-2 sm:grid-cols-2">
+          <div className={styles.addSectionBox}>
+            <p className={styles.addSectionHeading}>Add a section</p>
+            <div className={styles.grid2Sm}>
               {available.map((type) => (
                 <button
                   key={type}
@@ -677,17 +668,17 @@ export function SectionsPanel({ collections, links }: { collections: GroupingRef
                     setOpen(section.id);
                     setAdding(false);
                   }}
-                  className="flex items-start gap-3 rounded-[10px] p-3 text-start hover:bg-canvas"
+                  className={styles.addSectionChoice}
                 >
-                  <span className="mt-0.5 text-ink-2">{SECTION_TYPES[type].icon}</span>
+                  <span className={styles.addSectionIcon}>{SECTION_TYPES[type].icon}</span>
                   <span>
-                    <span className="block text-sm font-medium">{SECTION_TYPES[type].name}</span>
-                    <span className="block text-xs text-ink-3">{SECTION_TYPES[type].text}</span>
+                    <span className={styles.addSectionName}>{SECTION_TYPES[type].name}</span>
+                    <span className={styles.addSectionDesc}>{SECTION_TYPES[type].text}</span>
                   </span>
                 </button>
               ))}
             </div>
-            <div className="mt-2 flex justify-end">
+            <div className={`${styles.mt2} ${styles.flexEnd}`}>
               <button type="button" onClick={() => setAdding(false)} className={buttonClass({ variant: "ghost", size: "sm" })}>
                 Cancel
               </button>
@@ -697,7 +688,7 @@ export function SectionsPanel({ collections, links }: { collections: GroupingRef
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className={buttonClass({ variant: "outline", size: "sm", className: "mt-4" })}
+            className={buttonClass({ variant: "outline", size: "sm", className: styles.mt4 })}
             data-testid="add-section"
           >
             <Plus size={15} /> Add section
@@ -736,14 +727,14 @@ function SectionFields({
       );
     case "highlights":
       return (
-        <p className="text-sm text-ink-2">
+        <p className={styles.mutedText}>
           Nothing to write here: this section reads your delivery options, free-delivery amount and payment methods from
           Settings, so it is always accurate.
         </p>
       );
     case "products":
       return (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className={styles.grid2Md}>
           <TextField
             label="Heading"
             optional
@@ -796,7 +787,7 @@ function SectionFields({
             ))}
           </SelectField>
           {section.source === "featured" && (
-            <p className="text-xs text-ink-3 md:col-span-2">
+            <p className={`${styles.fieldHint} ${styles.mdColSpan2}`}>
               Mark products as featured in their editor. Until you do, this row picks from across the shop, newest first.
             </p>
           )}
@@ -804,8 +795,8 @@ function SectionFields({
       );
     case "banner":
       return (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-4">
+        <div className={styles.grid2LgGap4}>
+          <div className={styles.stack4}>
             <TextField
               label="Small line"
               optional
@@ -828,7 +819,7 @@ function SectionFields({
               value={section.text}
               onChange={(event) => onChange({ text: event.target.value })}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className={styles.grid2Sm}>
               <TextField
                 label="Button"
                 optional
@@ -848,12 +839,12 @@ function SectionFields({
               <LinkSuggestions id={listId} links={links} />
             </div>
           </div>
-          <div className="space-y-4">
+          <div className={styles.stack4}>
             <ImagePicker
               label="Photo"
               value={section.imageUrl}
               onChange={(url) => onChange({ imageUrl: url })}
-              aspect="aspect-[2/1]"
+              aspect="2/1"
               hint="Wide, at least 2000 px."
             />
             <SelectField

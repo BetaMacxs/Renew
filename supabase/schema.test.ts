@@ -211,7 +211,7 @@ describe("an admin", () => {
       expect((await tx.query("select id from public.categories")).rows).toHaveLength(2);
       const renamed = await tx.query("update public.products set name = 'Speaker Mini' where id = $1 returning updated_at", [PRODUCT]);
       expect(renamed.rows).toHaveLength(1);
-      await tx.query("update public.store_settings set data = '{\"store\":{\"name\":\"Halden\"}}' where id = 1");
+      await tx.query("update public.store_settings set data = '{\"store\":{\"name\":\"Detail Corner\"}}' where id = 1");
     });
   });
 
@@ -345,4 +345,129 @@ describe("the website's server (secret key)", () => {
       await failure(as("anon", null, (tx) => tx.query("select public.mark_whatsapp_opened($1, 'right-hash')", [id]))),
     ).toMatch(/permission denied/);
   });
+
+  it("enforces serverless rate limits for service_role and blocks public roles", async () => {
+    expect(
+      await failure(as("anon", null, (tx) => tx.query("select * from public.rate_limits"))),
+    ).toMatch(/permission denied/);
+    expect(
+      await failure(as("anon", null, (tx) => tx.query("select * from public.check_rate_limit('k1', 2, 60000)"))),
+    ).toMatch(/permission denied/);
+    expect(
+      await failure(as("authenticated", ADMIN, (tx) => tx.query("select * from public.check_rate_limit('k1', 2, 60000)"))),
+    ).toMatch(/permission denied/);
+
+    const r1 = await as("service_role", null, (tx) =>
+      tx.query<{ allowed: boolean; retry_after_ms: number }>("select * from public.check_rate_limit('checkout:ip1', 2, 60000)"),
+    );
+    const r2 = await as("service_role", null, (tx) =>
+      tx.query<{ allowed: boolean; retry_after_ms: number }>("select * from public.check_rate_limit('checkout:ip1', 2, 60000)"),
+    );
+    const r3 = await as("service_role", null, (tx) =>
+      tx.query<{ allowed: boolean; retry_after_ms: number }>("select * from public.check_rate_limit('checkout:ip1', 2, 60000)"),
+    );
+
+    expect(r1.rows[0]).toEqual({ allowed: true, retry_after_ms: 0 });
+    expect(r2.rows[0]).toEqual({ allowed: true, retry_after_ms: 0 });
+    expect(r3.rows[0].allowed).toBe(false);
+    expect(r3.rows[0].retry_after_ms).toBeGreaterThan(0);
+  });
 });
+
+describe("atomic inventory reservation and POPIA redaction", () => {
+  it("refuses confirmation when requested stock exceeds available stock, including split order lines", async () => {
+    const stockOf = async () =>
+      (
+        await db.query<{ stock: number }>(
+          "select (v ->> 'stock')::int as stock from public.products, jsonb_array_elements(variants) v where id = $1 and v ->> 'id' = 'v-black'",
+          [PRODUCT],
+        )
+      ).rows[0].stock;
+
+    const before = await stockOf();
+    expect(before).toBe(5);
+
+    // Two lines for the same variant totalling 6 (> 5 in stock) must be rejected atomically.
+    const oversellId = await insertOrder("received", [
+      { productId: PRODUCT, variantId: "v-black", quantity: 3 },
+      { productId: PRODUCT, variantId: "v-black", quantity: 3 },
+    ]);
+    const msg = await failure(
+      as("authenticated", ADMIN, (tx) =>
+        tx.query("select public.admin_transition_order($1, 'received', 'confirmed', 1, '')", [oversellId]),
+      ),
+    );
+    expect(msg).toMatch(/Not enough stock/);
+    expect(msg).not.toMatch(/conflict/i);
+    expect(await stockOf()).toBe(before);
+
+    const statusAfter = await db.query<{ status: string; stock_reserved: boolean }>(
+      "select status, stock_reserved from public.orders where id = $1",
+      [oversellId],
+    );
+    expect(statusAfter.rows[0]).toEqual({ status: "received", stock_reserved: false });
+
+    // Missing variant on a tracked product is also rejected.
+    const missingVariantId = await insertOrder("received", [
+      { productId: PRODUCT, variantId: "v-deleted", quantity: 1 },
+    ]);
+    expect(
+      await failure(
+        as("authenticated", ADMIN, (tx) =>
+          tx.query("select public.admin_transition_order($1, 'received', 'confirmed', 1, '')", [missingVariantId]),
+        ),
+      ),
+    ).toMatch(/no longer exists/);
+
+    // Split lines within stock (2 + 2 = 4 <= 5) succeed and return cleanly on cancellation.
+    const validSplitId = await insertOrder("received", [
+      { productId: PRODUCT, variantId: "v-black", quantity: 2 },
+      { productId: PRODUCT, variantId: "v-black", quantity: 2 },
+    ]);
+    await as("authenticated", ADMIN, (tx) =>
+      tx.query("select public.admin_transition_order($1, 'received', 'confirmed', 1, '')", [validSplitId]),
+    );
+    expect(await stockOf()).toBe(before - 4);
+
+    await as("authenticated", ADMIN, (tx) =>
+      tx.query("select public.admin_transition_order($1, 'confirmed', 'cancelled', -1, '')", [validSplitId]),
+    );
+    expect(await stockOf()).toBe(before);
+  });
+
+  it("allows admins to redact closed orders for POPIA while preserving totals and blocking non-admins", async () => {
+    const activeId = await insertOrder("received", [{ productId: PRODUCT, variantId: "v-black", quantity: 1 }]);
+    const completedId = await insertOrder("completed", [{ productId: PRODUCT, variantId: "v-black", quantity: 1 }], "secret-hash");
+
+    expect(
+      await failure(as("anon", null, (tx) => tx.query("select public.admin_anonymize_order($1)", [completedId]))),
+    ).toMatch(/permission denied/);
+    expect(
+      await failure(as("authenticated", SHOPPER, (tx) => tx.query("select public.admin_anonymize_order($1)", [completedId]))),
+    ).toMatch(/not allowed/);
+    expect(
+      await failure(as("authenticated", ADMIN, (tx) => tx.query("select public.admin_anonymize_order($1)", [activeId]))),
+    ).toMatch(/Only completed, cancelled, or discarded/);
+
+    const res = await as("authenticated", ADMIN, (tx) =>
+      tx.query<{
+        order: {
+          customer: { name: string; phone: string; email: string };
+          address: unknown;
+          customer_note: string;
+          total: number;
+          access_token_hash?: string;
+          events: { kind: string; note: string }[];
+        };
+      }>("select public.admin_anonymize_order($1) as order", [completedId]),
+    );
+
+    expect(res.rows[0].order.customer).toEqual({ name: "Redacted customer", phone: "", email: "" });
+    expect(res.rows[0].order.address).toBeNull();
+    expect(res.rows[0].order.customer_note).toBe("");
+    expect(res.rows[0].order.total).toBe(60);
+    expect(res.rows[0].order.access_token_hash).toBeUndefined();
+    expect(res.rows[0].order.events.at(-1)?.note).toMatch(/POPIA/);
+  });
+});
+

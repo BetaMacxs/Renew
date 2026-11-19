@@ -19,6 +19,7 @@ import { buttonClass } from "@/components/ui/button";
 import { Container } from "./HomeSections";
 import { ActiveFilters, ListingControls, SortSelect } from "./ListingControls";
 import { ProductGrid } from "./ProductCard";
+import styles from "./store.module.css";
 
 const PAGE_SIZE = 24;
 
@@ -143,38 +144,38 @@ export async function Listing({
   };
 
   return (
-    <Container className="pt-8 sm:pt-12">
-      <header className="mb-8 max-w-3xl">
-        {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
-        <h1 className="display text-[clamp(2rem,5vw,3.6rem)]">{title}</h1>
-        {description && <p className="mt-4 text-ink-2 sm:text-lg">{description}</p>}
+    <Container className={styles.pageTop}>
+      <header className={styles.listingHeader}>
+        {eyebrow && <p className={`eyebrow ${styles.listingEyebrow}`}>{eyebrow}</p>}
+        <h1 className={`display ${styles.listingTitle}`}>{title}</h1>
+        {description && <p className={styles.listingDesc}>{description}</p>}
       </header>
 
-      <div className="grid gap-x-10 gap-y-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
+      <div className={styles.listingLayout}>
         <ListingControls facets={facets} total={sorted.length} groupLinks={groupLinks} activeCount={chips.length} />
 
-        <div className="min-w-0">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm text-ink-3" aria-live="polite">
+        <div className={styles.listingMain}>
+          <div className={styles.listingToolbar}>
+            <p className={styles.listingCount} aria-live="polite">
               {t.listing.results(sorted.length)}
             </p>
-            <div className="hidden lg:block">
+            <div className={styles.listingDesktopSort}>
               <SortSelect />
             </div>
           </div>
-          <div className="mb-6">
+          <div className={styles.listingActiveFilters}>
             <ActiveFilters chips={chips} clearHref={clearHref} />
           </div>
 
           {visible.length > 0 ? (
             <ProductGrid products={visible} money={money} t={t} priorityCount={3} columns="wide" />
           ) : (
-            <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong px-6 py-16 text-center">
-              <SearchX size={28} className="text-ink-3" />
-              <p className="mt-4 font-semibold">{t.listing.noResultsTitle}</p>
-              <p className="mt-1 text-sm text-ink-2">{t.listing.noResultsText}</p>
+            <div className={styles.listingEmpty}>
+              <SearchX size={28} className={styles.listingEmptyIcon} />
+              <p className={styles.listingEmptyTitle}>{t.listing.noResultsTitle}</p>
+              <p className={styles.listingEmptyText}>{t.listing.noResultsText}</p>
               {chips.length > 0 && (
-                <Link href={clearHref} className={buttonClass({ variant: "outline", className: "mt-6" })}>
+                <Link href={clearHref} className={buttonClass({ variant: "outline", className: styles.listingEmptyBtn })}>
                   {t.listing.clearAll}
                 </Link>
               )}
@@ -182,15 +183,13 @@ export async function Listing({
           )}
 
           {pageCount > 1 && (
-            <nav className="mt-12 flex items-center justify-center gap-1" aria-label="Pagination">
+            <nav className={styles.pagination} aria-label="Pagination">
               {Array.from({ length: pageCount }, (_, index) => index + 1).map((target) => (
                 <Link
                   key={target}
                   href={pageHref(target)}
                   aria-current={target === page ? "page" : undefined}
-                  className={`price grid size-10 place-items-center rounded-[var(--radius-control)] text-sm ${
-                    target === page ? "bg-ink text-paper" : "hover:bg-canvas"
-                  }`}
+                  className={`price ${styles.paginationLink} ${target === page ? styles.paginationLinkActive : ""}`.trim()}
                 >
                   {target}
                 </Link>

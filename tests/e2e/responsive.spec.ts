@@ -8,9 +8,9 @@ const WIDTHS = [320, 390, 768, 1024, 1440];
 const STORE_PAGES = [
   "/",
   "/shop",
-  "/categories/apparel",
-  "/collections/gift-guide",
-  "/products/everyday-organic-tee",
+  "/categories/car-wash",
+  "/collections/wash-decon",
+  "/products/premium-ph-neutral-car-shampoo-1l",
   "/cart",
   "/checkout",
   "/pages/contact",
@@ -22,7 +22,7 @@ const DASHBOARD_PAGES = ["/admin", "/admin/orders", "/admin/products", "/admin/p
 for (const width of WIDTHS) {
   test(`shop pages fit a ${width}px screen`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    await addToBag(page, "canvas-tote");
+    await addToBag(page, "premium-microfibre-wash-mitt");
     for (const path of STORE_PAGES) {
       await page.goto(path);
       await expect(page.locator("main")).toBeVisible();

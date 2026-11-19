@@ -1,4 +1,5 @@
 import { discountPercent, formatMoney, type MoneyFormat } from "@/lib/domain/money";
+import styles from "./store.module.css";
 
 /**
  * A price, optionally with the "was" price struck through. The struck price
@@ -24,14 +25,15 @@ export function Price({
 }) {
   const discounted = discountPercent(amount, compareAt) !== null;
   const now = formatMoney(amount, money);
-  const sizes = { sm: "text-sm", md: "text-base", lg: "text-2xl sm:text-[1.75rem]" };
+  const sizeClass =
+    size === "sm" ? styles.priceAmountSm : size === "lg" ? styles.priceAmountLg : styles.priceAmountMd;
   return (
-    <span className={`inline-flex flex-wrap items-baseline gap-x-2 ${className}`}>
-      <span className={`price font-semibold ${sizes[size]} ${discounted ? "text-accent-text" : "text-ink"}`}>
+    <span className={`${styles.priceWrap} ${className}`.trim()}>
+      <span className={`price ${styles.priceAmount} ${sizeClass} ${discounted ? styles.priceAmountDiscount : ""}`.trim()}>
         {from ? from(now) : now}
       </span>
       {discounted && compareAt != null && (
-        <s className={`price relative text-ink-3 ${size === "lg" ? "text-base" : "text-sm"}`}>
+        <s className={`price ${styles.priceCompare} ${size === "lg" ? styles.priceCompareLg : ""}`.trim()}>
           <span className="sr-only">{wasLabel ? wasLabel(formatMoney(compareAt, money)) : ""}</span>
           <span aria-hidden={wasLabel ? true : undefined}>{formatMoney(compareAt, money)}</span>
         </s>

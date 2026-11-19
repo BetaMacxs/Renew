@@ -1,5 +1,5 @@
 /**
- * Puts the demo store (30 fictional products, their categories and
+ * Puts the demo store (12 fictional products, their categories and
  * collections) into your Supabase database — or takes it back out.
  *
  *   npm run db:seed                  add or refresh the demo products
@@ -22,7 +22,14 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { demoCatalog, demoSettings } from "@/lib/demo/seed";
+import {
+  demoCatalog,
+  demoSettings,
+  detailCornerStarterSettings,
+  detectDemoSettings,
+  stripDemoSettings,
+} from "@/lib/demo/seed";
+import { parseSettings } from "@/lib/domain/settings";
 import type { Grouping, Product } from "@/lib/domain/types";
 import { fromGrouping, fromProduct } from "@/server/backend/supabase/mappers";
 import { env, fail, loadEnv } from "./lib.mjs";
@@ -88,6 +95,42 @@ async function remove() {
   console.log(
     `✓ Removed ${removed.products} demo products, ${removed.categories} categories and ${removed.collections} collections.`,
   );
+
+  const { data, error } = await supabase.from("store_settings").select("data").eq("id", 1).maybeSingle();
+  if (error) fail(`Could not read the store settings: ${error.message}`);
+  const current = parseSettings(data?.data);
+  const demoHits = detectDemoSettings(current);
+  if (demoHits.length > 0) {
+    if (args.has("--settings")) {
+      const cleaned = stripDemoSettings(current);
+      const { error: writeError } = await supabase
+        .from("store_settings")
+        .upsert({ id: 1, data: cleaned.settings }, { onConflict: "id" });
+      if (writeError) fail(`Could not clean the store settings: ${writeError.message}`);
+      console.log(`✓ Cleaned ${cleaned.cleanedFields.length} sample demo setting field(s).`);
+    } else {
+      console.log(
+        `! Store settings still contain sample demo values (${demoHits.join(", ")}). Re-run with --remove --settings or clean them in Settings → Demo content.`,
+      );
+    }
+  }
+}
+
+async function initDetailCorner() {
+  const { data, error } = await supabase.from("store_settings").select("data").eq("id", 1).maybeSingle();
+  if (error) fail(`Could not read the store settings: ${error.message}`);
+  const raw = (data?.data as Record<string, unknown>) ?? {};
+  const blank = !data || Object.keys(raw).length === 0;
+  if (!blank && !args.has("--force")) {
+    fail("Store settings already exist. Pass --force to overwrite with Detail Corner starter defaults, or edit in /admin/settings.");
+  }
+  const starter = detailCornerStarterSettings();
+  const { error: writeError } = await supabase
+    .from("store_settings")
+    .upsert({ id: 1, data: starter }, { onConflict: "id" });
+  if (writeError) fail(`Could not write Detail Corner starter settings: ${writeError.message}`);
+  console.log("✓ Detail Corner starter settings saved (ZAR currency, Obsidian & Crimson theme).");
+  console.log("  Still configure in /admin/settings: contact email/WhatsApp, shipping rates, bank details, VAT (if registered), hero photo & policies.");
 }
 
 async function seed() {
@@ -98,9 +141,60 @@ async function seed() {
     existing(supabase, "products"),
   ]);
 
-  const groupingRow = (item: Grouping) => ({ ...fromGrouping(item), created_at: item.createdAt });
+  const storageBase = `${url}/storage/v1/object/public/products`;
+  const bucketFiles = new Set<string>();
+  const { data: rootFiles } = await supabase.storage.from("products").list("", { limit: 1000 });
+  for (const file of rootFiles ?? []) {
+    if (file.name) bucketFiles.add(file.name);
+  }
+  for (const folder of ["categories", "banners"]) {
+    const { data: folderFiles } = await supabase.storage.from("products").list(folder, { limit: 100 });
+    for (const file of folderFiles ?? []) {
+      if (file.name) bucketFiles.add(`${folder}/${file.name}`);
+    }
+  }
+
+  const resolveGroupingUrl = (imageUrl: string | null) => {
+    if (!imageUrl) return imageUrl;
+    if (imageUrl.startsWith("/demo/categories/")) {
+      const rel = imageUrl.replace("/demo/", "");
+      if (bucketFiles.has(rel)) return `${storageBase}/${rel}`;
+    }
+    if (imageUrl.startsWith("/demo/banners/")) {
+      const rel = imageUrl.replace("/demo/", "");
+      if (bucketFiles.has(rel)) return `${storageBase}/${rel}`;
+    }
+    return imageUrl;
+  };
+
+  const resolveProductUrl = (item: Product, defaultUrl: string) => {
+    const sku = item.variants[0]?.sku;
+    const candidates = [
+      ...(sku ? [`${sku}.png`, `${sku}.jpg`, `${sku}.webp`] : []),
+      `${item.slug}.png`,
+      `${item.slug}.jpg`,
+      `${item.slug}.webp`,
+    ];
+    for (const file of candidates) {
+      if (bucketFiles.has(file)) return `${storageBase}/${file}`;
+    }
+    return defaultUrl;
+  };
+
+  const groupingRow = (item: Grouping) => ({
+    ...fromGrouping(item),
+    image_url: resolveGroupingUrl(item.imageUrl),
+    created_at: item.createdAt,
+  });
   // Keep each product's age, so "New" badges and "newest first" look right.
-  const productRow = (item: Product) => ({ ...fromProduct(item), created_at: item.createdAt });
+  const productRow = (item: Product) => {
+    const row = fromProduct(item);
+    const images = (item.images ?? []).map((img) => ({
+      ...img,
+      url: resolveProductUrl(item, img.url),
+    }));
+    return { ...row, images, created_at: item.createdAt };
+  };
 
   const plannedCategories = plan(demo.categories, categories);
   const plannedCollections = plan(demo.collections, collections);
@@ -132,4 +226,5 @@ async function seed() {
 }
 
 if (args.has("--remove")) await remove();
+else if (args.has("--detail-corner")) await initDetailCorner();
 else await seed();

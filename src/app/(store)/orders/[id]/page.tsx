@@ -7,7 +7,8 @@ import { Container } from "@/components/store/HomeSections";
 import { Receipt, ReceiptLine, ReceiptRule } from "@/components/store/Receipt";
 import { RichText } from "@/components/store/RichText";
 import { WhatsAppHandoff } from "@/components/store/WhatsAppHandoff";
-import { formatMoney } from "@/lib/domain/money";
+import styles from "@/components/store/store.module.css";
+import { formatMoney, includedVatAmount } from "@/lib/domain/money";
 import { isWhatsAppHandoff } from "@/lib/domain/orders";
 import { isWhatsAppConfigured, moneyFormatOf } from "@/lib/domain/settings";
 import type { Order } from "@/lib/domain/types";
@@ -58,7 +59,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
   if (!order || !key) notFound();
 
   const demoNotice = publicDemoMode() ? (
-    <div className="mb-6">
+    <div className={styles.orderDemoWrap}>
       <DemoNotice>{t.demo.order}</DemoNotice>
     </div>
   ) : null;
@@ -91,24 +92,31 @@ export default async function OrderPage({ params, searchParams }: Props) {
       />
       <ReceiptRule />
       <ReceiptLine label={t.cart.total} amount={formatMoney(order.total, money, "full")} strong />
+      {settings.checkout.vatEnabled && settings.checkout.vatRate > 0 && (
+        <ReceiptLine
+          label={t.cart.vatIncluded(settings.checkout.vatRate, settings.checkout.vatNumber || undefined)}
+          amount={formatMoney(includedVatAmount(order.total, settings.checkout.vatRate), money, "full")}
+          muted
+        />
+      )}
     </Receipt>
   );
 
   if (handoff) {
     const message = buildOrderMessage(order, { storeName: settings.store.name, money, labels: t.whatsapp });
     return (
-      <Container className="pt-8 sm:pt-12">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-14">
+      <Container className={styles.pageTop}>
+        <div className={styles.orderGrid}>
           <div>
             {demoNotice}
             <p className="eyebrow">{t.order.number(order.number)}</p>
-            <h1 className="display mt-3 text-[clamp(1.9rem,4.5vw,3rem)]">
+            <h1 className={`display ${styles.orderTitle}`}>
               {configured ? t.order.whatsappReadyTitle : t.order.whatsappDemoTitle}
             </h1>
-            <p className="mt-4 max-w-2xl text-ink-2">
+            <p className={styles.orderIntro}>
               {configured ? t.order.whatsappReadyText : t.order.whatsappDemoText}
             </p>
-            <div className="mt-8">
+            <div className={styles.orderHandoffWrap}>
               <WhatsAppHandoff
                 url={configured ? whatsappUrl(settings.contact.whatsapp, message) : null}
                 message={message}
@@ -117,7 +125,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
               />
             </div>
           </div>
-          <div className="lg:pt-10">{receipt}</div>
+          <div className={styles.orderReceiptTop}>{receipt}</div>
         </div>
       </Container>
     );
@@ -127,46 +135,46 @@ export default async function OrderPage({ params, searchParams }: Props) {
   const cancelled = order.status === "cancelled" || order.status === "discarded";
 
   return (
-    <Container className="pt-8 sm:pt-12">
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-14">
-        <div className="space-y-10">
+    <Container className={styles.pageTop}>
+      <div className={styles.orderGrid}>
+        <div className={styles.orderMain}>
           <header>
             {demoNotice}
             <p className="eyebrow">
               {t.order.number(order.number)} · {t.order.placedOn(placed)}
             </p>
-            <h1 className="display mt-3 text-[clamp(1.9rem,4.5vw,3rem)]">{t.order.thanks}</h1>
+            <h1 className={`display ${styles.orderTitle}`}>{t.order.thanks}</h1>
             {settings.checkout.confirmationNote && (
-              <p className="mt-4 max-w-2xl text-ink-2 sm:text-lg">{settings.checkout.confirmationNote}</p>
+              <p className={styles.orderIntro}>{settings.checkout.confirmationNote}</p>
             )}
           </header>
 
           <section>
-            <h2 className="eyebrow mb-4">{t.order.statusTitle}</h2>
+            <h2 className={`eyebrow ${styles.orderStatusHeading}`}>{t.order.statusTitle}</h2>
             {cancelled ? (
-              <p className="flex items-center gap-2 rounded-[var(--radius-control)] bg-danger-soft px-4 py-3 font-medium text-danger">
+              <p className={styles.orderStatusCancelled}>
                 <CircleAlert size={18} />
                 {t.order.customerStatus[order.status]}
               </p>
             ) : (
-              <ol className="grid gap-3 sm:grid-cols-4" data-testid="order-status">
+              <ol className={styles.orderStepsGrid} data-testid="order-status">
                 {STEPS.map((step, index) => {
                   const done = index <= stepIndex;
                   return (
                     <li
                       key={step}
-                      className={`flex items-start gap-3 rounded-[var(--radius-control)] border p-3 text-sm ${
-                        index === stepIndex ? "border-ink bg-canvas font-semibold" : done ? "border-line" : "border-line text-ink-3"
-                      }`}
+                      className={`${styles.orderStepCard} ${
+                        index === stepIndex ? styles.orderStepCurrent : !done ? styles.orderStepMuted : ""
+                      }`.trim()}
                     >
                       {done ? (
                         index === stepIndex ? (
-                          <Clock size={17} className="mt-0.5 shrink-0" />
+                          <Clock size={17} className={styles.orderStepIcon} />
                         ) : (
-                          <CircleCheck size={17} className="mt-0.5 shrink-0 text-success" />
+                          <CircleCheck size={17} className={`${styles.orderStepIcon} ${styles.orderStepSuccess}`} />
                         )
                       ) : (
-                        <PackageCheck size={17} className="mt-0.5 shrink-0" />
+                        <PackageCheck size={17} className={styles.orderStepIcon} />
                       )}
                       <span>{t.order.customerStatus[step]}</span>
                     </li>
@@ -176,50 +184,50 @@ export default async function OrderPage({ params, searchParams }: Props) {
             )}
           </section>
 
-          <section className="grid gap-6 sm:grid-cols-2">
+          <section className={styles.orderSectionGrid2}>
             <div>
-              <h2 className="eyebrow mb-3">{t.order.paymentTitle}</h2>
-              <p className="font-medium">
+              <h2 className={`eyebrow ${styles.orderSectionEyebrow}`}>{t.order.paymentTitle}</h2>
+              <p className={styles.orderStrongText}>
                 {order.paymentStatus === "paid" ? t.order.paymentPaid : t.order.paymentUnpaid[order.paymentMethod]}
               </p>
               {order.paymentMethod === "bank_transfer" && order.paymentStatus !== "paid" && !cancelled && (
-                <div className="mt-4 rounded-card border border-line p-4 text-sm">
-                  <p className="font-semibold">{t.order.bankDetails}</p>
+                <div className={styles.orderBankBox}>
+                  <p className={styles.orderBankTitle}>{t.order.bankDetails}</p>
                   {settings.checkout.bankTransferInstructions ? (
-                    <RichText text={settings.checkout.bankTransferInstructions} className="mt-2 text-sm" />
+                    <RichText text={settings.checkout.bankTransferInstructions} className={styles.orderBankRich} />
                   ) : null}
-                  <p className="mt-3 font-medium">{t.order.bankReference(order.number)}</p>
+                  <p className={styles.orderBankRef}>{t.order.bankReference(order.number)}</p>
                 </div>
               )}
             </div>
             <div>
-              <h2 className="eyebrow mb-3">{t.order.deliveryTitle}</h2>
-              <p className="font-medium">{order.customer.name}</p>
-              {order.shippingMethod && <p className="text-ink-2">{order.shippingMethod.name}</p>}
+              <h2 className={`eyebrow ${styles.orderSectionEyebrow}`}>{t.order.deliveryTitle}</h2>
+              <p className={styles.orderStrongText}>{order.customer.name}</p>
+              {order.shippingMethod && <p className={styles.orderMutedText}>{order.shippingMethod.name}</p>}
               {order.address ? (
-                <p className="text-ink-2">
+                <p className={styles.orderMutedText}>
                   {[order.address.line1, order.address.city, order.address.region, order.address.postalCode, order.address.country]
                     .filter(Boolean)
                     .join(", ")}
                 </p>
               ) : (
-                <p className="text-ink-2">{t.order.pickup}</p>
+                <p className={styles.orderMutedText}>{t.order.pickup}</p>
               )}
             </div>
           </section>
 
-          <section className="rounded-card bg-canvas p-5 text-sm">
-            <p className="font-medium">{t.order.keepLink}</p>
+          <section className={styles.orderKeepBox}>
+            <p className={styles.orderKeepTitle}>{t.order.keepLink}</p>
             {(contactUrl || settings.contact.email) && (
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-ink-2">
+              <div className={styles.orderKeepLinks}>
                 <span>{t.order.questions}</span>
                 {contactUrl && (
-                  <a href={contactUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-semibold text-ink underline-offset-4 hover:underline">
+                  <a href={contactUrl} target="_blank" rel="noopener noreferrer" className={styles.orderKeepLink}>
                     <WhatsAppIcon size={15} /> WhatsApp
                   </a>
                 )}
                 {settings.contact.email && (
-                  <a href={`mailto:${settings.contact.email}?subject=${encodeURIComponent(t.order.number(order.number))}`} className="font-semibold text-ink underline-offset-4 hover:underline">
+                  <a href={`mailto:${settings.contact.email}?subject=${encodeURIComponent(t.order.number(order.number))}`} className={styles.orderKeepLink}>
                     {settings.contact.email}
                   </a>
                 )}

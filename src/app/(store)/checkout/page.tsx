@@ -3,6 +3,7 @@ import { AdoptHandedOffCart } from "@/components/store/AdoptHandedOffCart";
 import { CheckoutForm } from "@/components/store/CheckoutForm";
 import { DemoNotice } from "@/components/store/Demo";
 import { Container } from "@/components/store/HomeSections";
+import styles from "@/components/store/store.module.css";
 import { getDictionary } from "@/lib/i18n";
 import { publicDemoMode } from "@/server/env";
 import { issueFormToken } from "@/server/form-token";
@@ -17,10 +18,10 @@ export default async function CheckoutPage() {
   const { settings } = await getStorefront();
   const t = getDictionary(settings.store.language);
   return (
-    <Container className="pt-8 sm:pt-12">
-      <h1 className="display mb-10 text-[clamp(2rem,5vw,3.4rem)]">{t.checkout.title}</h1>
+    <Container className={styles.pageTop}>
+      <h1 className={`display ${styles.checkoutHeading}`}>{t.checkout.title}</h1>
       {publicDemoMode() && (
-        <div className="-mt-4 mb-10 max-w-3xl">
+        <div className={styles.checkoutDemoWrap}>
           <DemoNotice>{t.demo.checkout}</DemoNotice>
         </div>
       )}

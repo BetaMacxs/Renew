@@ -8,7 +8,8 @@ import { COMMON_CURRENCIES } from "@/lib/domain/money";
 import { formatInternational, isValidWhatsAppNumber, normalizePhone } from "@/lib/domain/phone";
 import { LANGUAGE_LABELS, LANGUAGES, type Language } from "@/lib/i18n/languages";
 import { uid } from "@/lib/uid";
-import { changePasswordAction, loadDemoAction, removeDemoAction } from "@/server/actions/admin";
+import { changePasswordAction, cleanDemoSettingsAction, loadDemoAction, removeDemoAction } from "@/server/actions/admin";
+import styles from "./admin.module.css";
 import { ImagePicker } from "./ImagePicker";
 import { SettingsPanel, useSettingsDraft, useStoredSettings } from "./settings-kit";
 import { ConfirmButton, Notice, Panel, SelectField, TextAreaField, TextField, Toggle, useToast } from "./ui";
@@ -45,7 +46,7 @@ export function StorePanel() {
       onReset={form.reset}
       testId="settings-store"
     >
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className={styles.grid2Md}>
         <TextField
           label="Store name"
           value={draft.name}
@@ -66,7 +67,7 @@ export function StorePanel() {
         <TextAreaField
           label="About the store"
           optional
-          className="md:col-span-2"
+          className={styles.mdColSpan2}
           rows={3}
           maxLength={500}
           value={draft.description}
@@ -77,11 +78,11 @@ export function StorePanel() {
           label="Logo"
           value={draft.logoUrl}
           onChange={(url) => patch({ logoUrl: url })}
-          aspect="aspect-[3/1]"
+          aspect="3/1"
           fit="contain"
           hint="Replaces the name in the header. A wide PNG with a transparent background works best."
         />
-        <div className="space-y-5">
+        <div className={styles.stack5}>
           <SelectField
             label="Shop language"
             value={draft.language}
@@ -132,7 +133,7 @@ export function StorePanel() {
         <TextField
           label="Shop address"
           optional
-          className="md:col-span-2"
+          className={styles.mdColSpan2}
           type="url"
           inputMode="url"
           placeholder="https://shop.example.com"
@@ -175,8 +176,8 @@ export function ContactPanel() {
       onReset={form.reset}
       testId="settings-contact"
     >
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="md:col-span-2">
+      <div className={styles.grid2Md}>
+        <div className={styles.mdColSpan2}>
           <TextField
             label="WhatsApp number"
             optional
@@ -195,7 +196,7 @@ export function ContactPanel() {
             data-testid="whatsapp-number"
           />
           {!digits && (
-            <div className="mt-3">
+            <div className={styles.mt3}>
               <Notice tone="info" title="WhatsApp checkout is in demo mode">
                 Without a number, shoppers who choose WhatsApp see the message they would send, but no chat opens and
                 nothing is sent to anyone.
@@ -268,7 +269,7 @@ export function SocialPanel() {
       onSave={form.save}
       onReset={form.reset}
     >
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className={styles.grid2Md}>
         {SOCIAL_FIELDS.map((field) => (
           <TextField
             key={field.key}
@@ -294,10 +295,19 @@ export function CheckoutPanel() {
   const form = useSettingsDraft({
     read: (settings) => settings.checkout,
     write: (draft) => ({ section: "checkout", value: draft }),
-    validate: (draft) =>
-      draft.bankTransfer && !draft.bankTransferInstructions.trim()
-        ? { bankTransferInstructions: "Add the details shoppers need to pay you." }
-        : {},
+    validate: (draft) => {
+      const problems: Record<string, string> = {};
+      if (draft.bankTransfer && !draft.bankTransferInstructions.trim()) {
+        problems.bankTransferInstructions = "Add the details shoppers need to pay you.";
+      }
+      if (draft.vatEnabled) {
+        const rate = Number(draft.vatRate);
+        if (!Number.isFinite(rate) || rate <= 0 || rate > 50) {
+          problems.vatRate = "Enter a valid VAT percentage (e.g. 15).";
+        }
+      }
+      return problems;
+    },
     saved: "Checkout saved",
   });
   const { draft, patch, errors } = form;
@@ -315,14 +325,14 @@ export function CheckoutPanel() {
       onReset={form.reset}
       testId="settings-checkout"
     >
-      <div className="space-y-6">
+      <div className={styles.stack6}>
         <Toggle
           checked={draft.cashOnDelivery}
           onChange={(value) => patch({ cashOnDelivery: value })}
           label="Order on the website, pay on delivery"
           description="The shopper places the order here and pays when it arrives or at pickup."
         />
-        <div className="space-y-4">
+        <div className={styles.stack4}>
           <Toggle
             checked={draft.bankTransfer}
             onChange={(value) => patch({ bankTransfer: value })}
@@ -341,7 +351,7 @@ export function CheckoutPanel() {
             />
           )}
         </div>
-        <div className="space-y-3">
+        <div className={styles.stack3}>
           <Toggle
             checked={draft.whatsapp}
             onChange={(value) => patch({ whatsapp: value })}
@@ -369,6 +379,38 @@ export function CheckoutPanel() {
           placeholder="We'll call you within one working day to confirm your order."
           hint="Shown on the confirmation page after a website order."
         />
+        <div className={styles.dividerSection}>
+          <Toggle
+            checked={draft.vatEnabled}
+            onChange={(value) => patch({ vatEnabled: value })}
+            label="Show VAT-inclusive breakdown"
+            description="Shows included VAT on checkout and order receipts without changing your shelf prices or order totals."
+          />
+          {draft.vatEnabled && (
+            <div className={styles.grid2Sm}>
+              <TextField
+                label="VAT rate (%)"
+                inputMode="decimal"
+                value={String(draft.vatRate)}
+                error={errors.vatRate}
+                onChange={(event) => {
+                  const parsed = Number(event.target.value.replace(",", "."));
+                  patch({ vatRate: Number.isFinite(parsed) ? parsed : 0 });
+                }}
+                hint="Standard South African VAT is 15% (calculated as total × 15 / 115)."
+              />
+              <TextField
+                label="VAT registration number"
+                optional
+                value={draft.vatNumber}
+                maxLength={40}
+                placeholder="4000000000"
+                onChange={(event) => patch({ vatNumber: event.target.value })}
+                hint="Shown alongside the VAT line when provided."
+              />
+            </div>
+          )}
+        </div>
       </div>
     </SettingsPanel>
   );
@@ -440,12 +482,12 @@ export function DeliveryPanel() {
       onReset={form.reset}
       testId="settings-delivery"
     >
-      <div className="space-y-4">
+      <div className={styles.stack4}>
         {errors.methods && <Notice tone="danger">{errors.methods}</Notice>}
         {draft.methods.map((method, index) => (
-          <fieldset key={method.id} className="rounded-[12px] border border-line p-4">
+          <fieldset key={method.id} className={styles.deliveryFieldset}>
             <legend className="sr-only">Delivery option {index + 1}</legend>
-            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_9rem]">
+            <div className={styles.deliveryGrid}>
               <TextField
                 label="Name"
                 value={method.name}
@@ -465,29 +507,29 @@ export function DeliveryPanel() {
               <TextField
                 label="Details"
                 optional
-                className="sm:col-span-2"
+                className={styles.smColSpan2}
                 value={method.description}
                 maxLength={160}
                 placeholder="2–4 working days"
                 onChange={(event) => updateMethod(index, { description: event.target.value })}
               />
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-sm">
+            <div className={styles.deliveryFooter}>
+              <label className={styles.inlineCheck}>
                 <input
                   type="checkbox"
                   checked={!method.requiresAddress}
                   onChange={(event) => updateMethod(index, { requiresAddress: !event.target.checked })}
-                  className="size-4 accent-[var(--accent)]"
+                  className={styles.checkbox}
                 />
                 Pickup — no address needed
               </label>
-              <div className="flex items-center gap-1">
+              <div className={styles.deliveryActions}>
                 <button
                   type="button"
                   onClick={() => moveMethod(index, -1)}
                   disabled={index === 0}
-                  className="grid size-8 place-items-center rounded-[8px] text-ink-3 hover:bg-canvas hover:text-ink disabled:opacity-30"
+                  className={styles.iconSquareBtn}
                   aria-label={`Move ${method.name || "option"} up`}
                 >
                   <ArrowUp size={15} />
@@ -496,7 +538,7 @@ export function DeliveryPanel() {
                   type="button"
                   onClick={() => moveMethod(index, 1)}
                   disabled={index === draft.methods.length - 1}
-                  className="grid size-8 place-items-center rounded-[8px] text-ink-3 hover:bg-canvas hover:text-ink disabled:opacity-30"
+                  className={styles.iconSquareBtn}
                   aria-label={`Move ${method.name || "option"} down`}
                 >
                   <ArrowDown size={15} />
@@ -506,7 +548,7 @@ export function DeliveryPanel() {
                   onClick={() =>
                     setDraft((current) => ({ ...current, methods: current.methods.filter((_, position) => position !== index) }))
                   }
-                  className="inline-flex h-8 items-center gap-1 rounded-[8px] px-2 text-sm text-ink-3 hover:bg-canvas hover:text-danger"
+                  className={styles.removeActionBtn}
                 >
                   <Trash2 size={14} /> Remove
                 </button>
@@ -515,24 +557,26 @@ export function DeliveryPanel() {
           </fieldset>
         ))}
         {draft.methods.length < 8 && (
-          <button
-            type="button"
-            onClick={() =>
-              setDraft((current) => ({
-                ...current,
-                methods: [
-                  ...current.methods,
-                  { id: `option-${uid().slice(0, 8)}`, name: "", description: "", price: "", requiresAddress: true },
-                ],
-              }))
-            }
-            className={buttonClass({ variant: "outline", size: "sm" })}
-          >
-            <Plus size={15} /> Add delivery option
-          </button>
+          <div>
+            <button
+              type="button"
+              onClick={() =>
+                setDraft((current) => ({
+                  ...current,
+                  methods: [
+                    ...current.methods,
+                    { id: `option-${uid().slice(0, 8)}`, name: "", description: "", price: "", requiresAddress: true },
+                  ],
+                }))
+              }
+              className={buttonClass({ variant: "outline", size: "sm" })}
+            >
+              <Plus size={15} /> Add delivery option
+            </button>
+          </div>
         )}
 
-        <div className="space-y-4 border-t border-line pt-5">
+        <div className={styles.dividerSection}>
           <Toggle
             checked={draft.freeOver}
             onChange={(value) => setDraft((current) => ({ ...current, freeOver: value }))}
@@ -543,7 +587,7 @@ export function DeliveryPanel() {
             <TextField
               label="Free from"
               inputMode="decimal"
-              className="max-w-56"
+              className={styles.maxW56}
               suffix={currency}
               value={draft.threshold}
               error={errors.freeShippingThreshold}
@@ -555,7 +599,7 @@ export function DeliveryPanel() {
             optional
             value={draft.areas}
             maxLength={160}
-            placeholder="Across the United States"
+            placeholder="Across South Africa"
             error={errors.areas}
             onChange={(event) => setDraft((current) => ({ ...current, areas: event.target.value }))}
             hint="One short sentence, shown with your delivery promise on the homepage."
@@ -591,7 +635,7 @@ export function PoliciesPanel() {
       onSave={form.save}
       onReset={form.reset}
     >
-      <div className="space-y-5">
+      <div className={styles.stack5}>
         {POLICY_FIELDS.map((field) => (
           <TextAreaField
             key={field.key}
@@ -613,88 +657,142 @@ export function PoliciesPanel() {
 
 export function DemoPanel({
   counts,
+  demoSettingsHits = [],
   preview = false,
 }: {
   counts: { products: number; categories: number; collections: number };
+  demoSettingsHits?: string[];
   preview?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [includeSettings, setIncludeSettings] = useState(false);
+  const [cleanSettings, setCleanSettings] = useState(demoSettingsHits.length > 0);
   const total = counts.products + counts.categories + counts.collections;
 
   return (
     <Panel id="demo" title="Demo content" description="Sample products that make a new shop look complete while you set it up.">
       {preview ? (
-        <p className="text-sm text-ink-2">
-          This store shows <strong className="text-ink">{counts.products} demo products</strong>. In your own store, this is
+        <p className={styles.mutedText}>
+          This store shows <strong className={styles.strongText}>{counts.products} demo products</strong>. In your own store, this is
           where you remove them all in one click once your products are in — or bring them back.
         </p>
       ) : total > 0 ? (
-        <div className="space-y-4">
-          <p className="text-sm text-ink-2">
-            Your shop has <strong className="text-ink">{counts.products} demo products</strong>, {counts.categories} demo
+        <div className={styles.stack4}>
+          <p className={styles.mutedText}>
+            Your shop has <strong className={styles.strongText}>{counts.products} demo products</strong>, {counts.categories} demo
             categories and {counts.collections} demo collections. They are fictional and marked “Demo” in your lists.
           </p>
-          <ConfirmButton
-            variant="outline"
-            title="Remove all demo content?"
-            description={
-              <>
-                This deletes the {counts.products} demo products and the demo categories and collections. Your own products,
-                your settings and every order stay as they are — orders keep a copy of what was bought.
-              </>
-            }
-            confirmLabel="Remove demo content"
-            onConfirm={async () => {
-              const result = await removeDemoAction();
-              if (result.ok) {
-                toast("success", `Removed ${result.data.products} demo products`);
-                router.refresh();
-              } else toast("danger", result.error);
-            }}
-          >
-            <span data-testid="remove-demo">Remove demo content</span>
-          </ConfirmButton>
+          {demoSettingsHits.length > 0 && (
+            <label className={styles.demoCheckLabel}>
+              <input
+                type="checkbox"
+                checked={cleanSettings}
+                onChange={(event) => setCleanSettings(event.target.checked)}
+                className={styles.demoCheckBox}
+              />
+              <span>
+                Also clear sample demo settings, hero/banner images and sample pages
+                <span className={styles.fieldHint}>
+                  Detected: {demoSettingsHits.join(", ")}. Custom details you saved stay untouched.
+                </span>
+              </span>
+            </label>
+          )}
+          <div>
+            <ConfirmButton
+              variant="outline"
+              title="Remove all demo content?"
+              description={
+                <>
+                  This deletes the {counts.products} demo products and the demo categories and collections. Your own products
+                  and every order stay as they are — orders keep a copy of what was bought.
+                </>
+              }
+              confirmLabel="Remove demo content"
+              onConfirm={async () => {
+                const result = await removeDemoAction({ cleanSettings });
+                if (result.ok) {
+                  toast(
+                    "success",
+                    result.data.settingsCleaned > 0
+                      ? `Removed ${result.data.products} demo products and cleaned demo settings`
+                      : `Removed ${result.data.products} demo products`,
+                  );
+                  router.refresh();
+                } else toast("danger", result.error);
+              }}
+            >
+              <span data-testid="remove-demo">Remove demo content</span>
+            </ConfirmButton>
+          </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          <p className="text-sm text-ink-2">
+        <div className={styles.stack4}>
+          {demoSettingsHits.length > 0 && (
+            <Notice
+              tone="warning"
+              title="Sample demo settings are still active"
+              action={
+                <ConfirmButton
+                  variant="outline"
+                  size="sm"
+                  title="Clear remaining sample demo settings?"
+                  description="Resets only untouched sample fields (store name, demo email, demo bank note, sample hero/banners, and demo pages) back to clean Detail Corner defaults. Any details you customized stay intact."
+                  confirmLabel="Clean demo settings"
+                  onConfirm={async () => {
+                    const result = await cleanDemoSettingsAction();
+                    if (result.ok) {
+                      toast("success", `Cleaned ${result.data.cleanedFields} demo setting(s)`);
+                      router.refresh();
+                    } else toast("danger", result.error);
+                  }}
+                >
+                  Clean demo settings
+                </ConfirmButton>
+              }
+            >
+              Leftover sample fields: {demoSettingsHits.join(", ")}. Replace or clean them before launching live.
+            </Notice>
+          )}
+          <p className={styles.mutedText}>
             No demo content in your shop. You can bring the sample products back — useful for trying a theme before your own
             photos are ready.
           </p>
-          <label className="flex items-start gap-2 text-sm">
+          <label className={styles.demoCheckLabel}>
             <input
               type="checkbox"
               checked={includeSettings}
               onChange={(event) => setIncludeSettings(event.target.checked)}
-              className="mt-0.5 size-4 accent-[var(--accent)]"
+              className={styles.demoCheckBox}
             />
             <span>
               Also use the demo store&apos;s name, homepage, delivery options and pages
-              <span className="block text-xs text-ink-3">Replaces yours. Contact details, checkout and theme stay.</span>
+              <span className={styles.fieldHint}>Replaces yours. Contact details, checkout and theme stay.</span>
             </span>
           </label>
-          <ConfirmButton
-            variant="outline"
-            confirmVariant="primary"
-            title="Add the demo content?"
-            description={
-              includeSettings
-                ? "Adds 30 sample products in 5 categories and 3 collections, and replaces your store name, homepage, delivery options and pages with the demo ones."
-                : "Adds 30 sample products in 5 categories and 3 collections. Nothing of yours is changed; a demo item never takes a handle you already use."
-            }
-            confirmLabel="Add demo content"
-            onConfirm={async () => {
-              const result = await loadDemoAction({ includeSettings });
-              if (result.ok) {
-                toast("success", `Added ${result.data.products} demo products`);
-                router.refresh();
-              } else toast("danger", result.error);
-            }}
-          >
-            Add demo content
-          </ConfirmButton>
+          <div>
+            <ConfirmButton
+              variant="outline"
+              confirmVariant="primary"
+              title="Add the demo content?"
+              description={
+                includeSettings
+                  ? "Adds 12 sample products in 7 categories and 3 collections, and replaces your store name, homepage, delivery options and pages with the demo ones."
+                  : "Adds 12 sample products in 7 categories and 3 collections. Nothing of yours is changed; a demo item never takes a handle you already use."
+              }
+              confirmLabel="Add demo content"
+              onConfirm={async () => {
+                const result = await loadDemoAction({ includeSettings });
+                if (result.ok) {
+                  toast("success", `Added ${result.data.products} demo products`);
+                  router.refresh();
+                } else toast("danger", result.error);
+              }}
+            >
+              Add demo content
+            </ConfirmButton>
+          </div>
         </div>
       )}
     </Panel>
@@ -717,11 +815,11 @@ export function AccountPanel({ email, backend }: { email: string; backend: "loca
           : `Signed in as ${email}. The password is stored hashed on this server.`
       }
     >
-      <form action={action} className="grid max-w-xl gap-4">
+      <form action={action} className={`${styles.gridGap4} ${styles.maxW576}`}>
         {state?.error && <Notice tone="danger">{state.error}</Notice>}
         {state?.ok && <Notice tone="success">Password changed.</Notice>}
         <TextField label="Current password" name="current" type="password" autoComplete="current-password" required />
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={styles.grid2Sm}>
           <TextField
             label="New password"
             name="next"

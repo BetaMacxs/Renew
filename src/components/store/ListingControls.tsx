@@ -8,6 +8,7 @@ import type { Facets, SortKey } from "@/lib/domain/catalog-query";
 import { buttonClass } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/Drawer";
 import { useStore } from "./StoreProvider";
+import styles from "./store.module.css";
 
 /**
  * Filters and sorting for a product listing. Everything lives in the URL, so
@@ -46,8 +47,8 @@ export function SortSelect() {
   const { params, update } = useQueryUpdater();
   const current = (params.get("sort") as SortKey) ?? "featured";
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <span className="hidden text-ink-3 sm:inline">{t.listing.sortBy}</span>
+    <label className={styles.sortLabel}>
+      <span className={styles.sortLabelText}>{t.listing.sortBy}</span>
       <select
         value={current}
         onChange={(event) =>
@@ -56,7 +57,7 @@ export function SortSelect() {
             else next.set("sort", event.target.value);
           })
         }
-        className="h-10 rounded-[var(--radius-control)] border border-line bg-paper pe-8 ps-3 font-medium"
+        className={styles.sortSelect}
       >
         {(Object.keys(t.listing.sort) as SortKey[]).map((key) => (
           <option key={key} value={key}>
@@ -78,7 +79,7 @@ export function ListingControls({ facets, total, groupLinks, activeCount }: Prop
   return (
     <>
       {/* Phones and tablets: one button, a drawer full of filters. */}
-      <div className="flex items-center justify-between gap-3 lg:hidden">
+      <div className={styles.mobileControls}>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -87,7 +88,7 @@ export function ListingControls({ facets, total, groupLinks, activeCount }: Prop
           <SlidersHorizontal size={16} />
           {t.listing.filters}
           {activeCount > 0 && (
-            <span className="price grid size-5 place-items-center rounded-full bg-ink text-[0.7rem] text-paper">
+            <span className={`price ${styles.filterCountBadge}`}>
               {activeCount}
             </span>
           )}
@@ -106,11 +107,14 @@ export function ListingControls({ facets, total, groupLinks, activeCount }: Prop
           </button>
         }
       >
-        <div className="px-5 py-2">{panel}</div>
+        <div className={styles.drawerFilterBody}>{panel}</div>
       </Drawer>
 
       {/* Desktop: a sidebar. */}
-      <aside className={`hidden lg:block ${pending ? "opacity-70" : ""}`} aria-label={t.listing.filters}>
+      <aside
+        className={`${styles.desktopSidebar} ${pending ? styles.desktopSidebarPending : ""}`.trim()}
+        aria-label={t.listing.filters}
+      >
         {panel}
       </aside>
     </>
@@ -119,8 +123,8 @@ export function ListingControls({ facets, total, groupLinks, activeCount }: Prop
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <fieldset className="border-b border-line py-5 first:pt-0">
-      <legend className="eyebrow mb-3 w-full">{title}</legend>
+    <fieldset className={styles.filterSection}>
+      <legend className={`eyebrow ${styles.filterLegend}`}>{title}</legend>
       {children}
     </fieldset>
   );
@@ -151,17 +155,15 @@ function FilterPanel({ facets, groupLinks }: Pick<Props, "facets" | "groupLinks"
   const selectedValues = (name: string) => new Set((params.get(`o.${name}`) ?? "").split(",").filter(Boolean));
 
   return (
-    <div className="text-sm">
+    <div className={styles.filterPanel}>
       {groupLinks && groupLinks.links.length > 0 && (
         <Section title={groupLinks.title}>
-          <ul className="space-y-1">
+          <ul className={styles.groupLinksList}>
             {groupLinks.links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className={`flex items-center justify-between rounded-[var(--radius-control)] px-2 py-1.5 hover:bg-canvas ${
-                    link.active ? "font-semibold text-ink" : "text-ink-2"
-                  }`}
+                  className={`${styles.groupLink} ${link.active ? styles.groupLinkActive : ""}`.trim()}
                   aria-current={link.active ? "page" : undefined}
                 >
                   {link.label}
@@ -174,21 +176,21 @@ function FilterPanel({ facets, groupLinks }: Pick<Props, "facets" | "groupLinks"
       )}
 
       <Section title={t.listing.availability}>
-        <label className="flex cursor-pointer items-center gap-3 py-1">
+        <label className={styles.checkRow}>
           <input
             type="checkbox"
             checked={params.get("stock") === "1"}
             onChange={() => toggle("stock")}
-            className="size-4 accent-[var(--accent)]"
+            className={styles.checkboxInput}
           />
           {t.listing.inStockOnly}
         </label>
-        <label className="flex cursor-pointer items-center gap-3 py-1">
+        <label className={styles.checkRow}>
           <input
             type="checkbox"
             checked={params.get("sale") === "1"}
             onChange={() => toggle("sale")}
-            className="size-4 accent-[var(--accent)]"
+            className={styles.checkboxInput}
           />
           {t.listing.onSaleOnly}
         </label>
@@ -199,7 +201,7 @@ function FilterPanel({ facets, groupLinks }: Pick<Props, "facets" | "groupLinks"
         const swatches = facet.values.some((value) => value.swatch);
         return (
           <Section key={facet.name} title={facet.name}>
-            <ul className="flex flex-wrap gap-2">
+            <ul className={styles.optionChips}>
               {facet.values.map((value) => {
                 const active = selected.has(value.label);
                 return (
@@ -208,13 +210,11 @@ function FilterPanel({ facets, groupLinks }: Pick<Props, "facets" | "groupLinks"
                       type="button"
                       onClick={() => toggleOption(facet.name, value.label)}
                       aria-pressed={active}
-                      className={`inline-flex h-9 items-center gap-2 rounded-[var(--radius-pill)] border px-3 transition-colors ${
-                        active ? "border-ink bg-ink text-paper" : "border-line hover:border-ink-3"
-                      }`}
+                      className={`${styles.optionChip} ${active ? styles.optionChipActive : ""}`.trim()}
                     >
                       {swatches && value.swatch && (
                         <span
-                          className="size-3.5 rounded-full ring-1 ring-black/10"
+                          className={styles.optionSwatch}
                           style={{ background: value.swatch }}
                           aria-hidden="true"
                         />
@@ -231,7 +231,7 @@ function FilterPanel({ facets, groupLinks }: Pick<Props, "facets" | "groupLinks"
 
       <Section title={t.listing.price}>
         <form
-          className="flex items-end gap-2"
+          className={styles.priceFilterForm}
           onSubmit={(event) => {
             event.preventDefault();
             update((next) => {
@@ -242,27 +242,27 @@ function FilterPanel({ facets, groupLinks }: Pick<Props, "facets" | "groupLinks"
             });
           }}
         >
-          <label className="flex-1">
-            <span className="mb-1 block text-xs text-ink-3">{t.listing.min}</span>
+          <label className={styles.priceFilterLabel}>
+            <span className={styles.priceFilterLabelText}>{t.listing.min}</span>
             <input
               inputMode="decimal"
               value={min}
               onChange={(event) => setMin(event.target.value.replace(/[^\d.]/g, ""))}
               placeholder={money(Math.floor(facets.priceMin))}
-              className="h-10 w-full rounded-[var(--radius-control)] border border-line bg-paper px-3"
+              className={styles.priceFilterInput}
             />
           </label>
-          <label className="flex-1">
-            <span className="mb-1 block text-xs text-ink-3">{t.listing.max}</span>
+          <label className={styles.priceFilterLabel}>
+            <span className={styles.priceFilterLabelText}>{t.listing.max}</span>
             <input
               inputMode="decimal"
               value={max}
               onChange={(event) => setMax(event.target.value.replace(/[^\d.]/g, ""))}
               placeholder={money(Math.ceil(facets.priceMax))}
-              className="h-10 w-full rounded-[var(--radius-control)] border border-line bg-paper px-3"
+              className={styles.priceFilterInput}
             />
           </label>
-          <button type="submit" className={buttonClass({ variant: "dark", size: "sm", className: "h-10" })}>
+          <button type="submit" className={buttonClass({ variant: "dark", size: "sm", className: styles.priceFilterSubmit })}>
             {t.listing.apply}
           </button>
         </form>
@@ -276,20 +276,20 @@ export function ActiveFilters({ chips, clearHref }: { chips: { label: string; hr
   const { t } = useStore();
   if (chips.length === 0) return null;
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={styles.activeFiltersWrap}>
       {chips.map((chip) => (
         <Link
           key={chip.href + chip.label}
           href={chip.href}
           scroll={false}
-          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-pill)] bg-canvas px-3 text-sm hover:bg-line"
+          className={styles.filterChip}
           aria-label={t.listing.removeFilter(chip.label)}
         >
           {chip.label}
           <X size={14} />
         </Link>
       ))}
-      <Link href={clearHref} scroll={false} className="ms-1 text-sm font-semibold underline underline-offset-4">
+      <Link href={clearHref} scroll={false} className={styles.clearFiltersLink}>
         {t.listing.clearAll}
       </Link>
     </div>

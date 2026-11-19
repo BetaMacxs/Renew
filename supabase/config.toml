@@ -4,7 +4,7 @@
 # your project with `supabase config push`, which changes exactly the
 # settings below and leaves everything else in your project as it is.
 
-project_id = "halden-ecommerce-starter"
+project_id = "detail-corner"
 
 [auth]
 # The shop has no customer accounts: only the admins you create can sign in.

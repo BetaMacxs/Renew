@@ -2,13 +2,9 @@ import type { Category, Collection, Product, ProductOption, ProductVariant } fro
 import { DEMO_PRODUCTS } from "./products";
 
 /**
- * Demo catalog: a general store across five departments, built so one shop
- * shows every kind of product the platform handles — colour and size
- * variants, capacity-priced electronics, scents, sets, and plain products
- * with no options at all.
- *
- * Ids are fixed UUIDs so loading the demo twice updates it instead of
- * duplicating it, and so they are valid ids in Postgres.
+ * Detail Corner demo catalog: South African automotive detailing and car-care
+ * store across seven categories, exercising variants, sizes, tracked stock,
+ * and plain products.
  */
 
 export const demoId = (kind: "c" | "a" | "b", n: number) =>
@@ -17,56 +13,68 @@ export const demoId = (kind: "c" | "a" | "b", n: number) =>
 const CATEGORY_DEFS = [
   {
     n: 1,
-    slug: "audio-tech",
-    name: "Audio & Tech",
-    description: "Headphones, speakers and the small pieces of kit that make a desk work.",
+    slug: "car-wash",
+    name: "Car Wash",
+    description: "pH-neutral shampoos, pre-wash snow foams and wash buckets.",
   },
   {
     n: 2,
-    slug: "home-kitchen",
-    name: "Home & Kitchen",
-    description: "Stoneware, glass and wood for the kitchen table, and calm things for every room.",
+    slug: "interior-care",
+    name: "Interior Care",
+    description: "All-purpose cleaners and satin-finish interior detailers for cabins.",
   },
   {
     n: 3,
-    slug: "apparel",
-    name: "Apparel",
-    description: "Heavyweight cotton, good denim and everyday layers in honest colours.",
+    slug: "wheel-tyre-care",
+    name: "Wheel & Tyre Care",
+    description: "Non-acid wheel cleaners and polymer-based tyre dressings.",
   },
   {
     n: 4,
-    slug: "bags-accessories",
-    name: "Bags & Accessories",
-    description: "Bags that go everywhere, and the small things you carry every day.",
+    slug: "exterior-care",
+    name: "Exterior Care",
+    description: "Color-changing iron fallout removers and paint decontamination.",
   },
   {
     n: 5,
-    slug: "beauty-care",
-    name: "Beauty & Care",
-    description: "Simple, effective care for skin and hands, and a fragrance worth wearing.",
+    slug: "glass-care",
+    name: "Glass Care",
+    description: "Ammonia-free glass cleaners for crystal clear visibility.",
+  },
+  {
+    n: 6,
+    slug: "accessories",
+    name: "Accessories",
+    description: "Plush microfibre wash mitts, twisted drying towels and edgeless cloths.",
+  },
+  {
+    n: 7,
+    slug: "protection",
+    name: "Protection",
+    description: "Ceramic spray sealants and hydrophobic paint protectants.",
   },
 ] as const;
 
 const COLLECTION_DEFS = [
   {
     n: 1,
-    slug: "gift-guide",
-    name: "Gift guide",
-    description: "Thoughtful presents across every department, most of them under $60.",
+    slug: "wash-decon",
+    name: "Wash & Decon",
+    description: "Essential pre-wash, shampoo and decontamination products for a safe contact wash.",
     image: "/demo/banners/gift-guide.jpg",
   },
   {
     n: 2,
-    slug: "desk-setup",
-    name: "The desk setup",
-    description: "Everything for a calmer, better-lit, better-sounding place to work.",
+    slug: "interior-glass",
+    name: "Interior & Glass",
+    description: "Keep your cockpit spotless, protected and glare-free.",
     image: "/demo/banners/desk-setup.jpg",
   },
   {
     n: 3,
-    slug: "under-50",
-    name: "Under $50",
-    description: "Small upgrades and easy gifts, all under fifty dollars.",
+    slug: "maintenance-essentials",
+    name: "Maintenance Essentials",
+    description: "High-performance car care staples for weekly upkeep.",
     image: null,
   },
 ] as const;
@@ -74,7 +82,11 @@ const COLLECTION_DEFS = [
 export type DemoCategorySlug = (typeof CATEGORY_DEFS)[number]["slug"];
 export type DemoCollectionSlug = (typeof COLLECTION_DEFS)[number]["slug"];
 
-const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * 86_400_000).toISOString();
+const daysAgo = (now: Date | string | undefined | null, days: number) => {
+  const base = now instanceof Date ? now : (typeof now === 'string' ? new Date(now) : new Date());
+  const validBase = !isNaN(base.getTime()) ? base : new Date();
+  return new Date(validBase.getTime() - days * 86_400_000).toISOString();
+};
 
 export function demoCategories(now: Date): Category[] {
   return CATEGORY_DEFS.map((def, index) => ({
@@ -118,17 +130,13 @@ export type DemoProductDef = {
   collections?: DemoCollectionSlug[];
   tags?: string[];
   featured?: boolean;
-  /** How long ago it was added — drives "Just in". */
   addedDaysAgo: number;
-  /** Alt text per photo, in order; files are /demo/products/<slug>/<n>.jpg. */
   photos: string[];
-  /** For products without options. */
   price?: number;
   compareAt?: number;
   stock?: number;
   sku?: string;
   options?: ProductOption[];
-  /** One entry per combination of option values, in option order. */
   variants?: {
     values: string[];
     price: number;
@@ -136,7 +144,6 @@ export type DemoProductDef = {
     stock?: number;
     sku: string;
     available?: boolean;
-    /** 1-based photo number shown when this variant is selected. */
     photo?: number;
   }[];
   trackInventory?: boolean;

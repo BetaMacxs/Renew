@@ -1,15 +1,28 @@
-import { Archivo, Bodoni_Moda, Bricolage_Grotesque, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google";
+import {
+  Bodoni_Moda,
+  Bricolage_Grotesque,
+  Geist_Mono,
+  IBM_Plex_Sans_Arabic,
+  Inter,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 
 /**
  * Self-hosted at build time by next/font — no request to Google from the
- * shopper's browser. Only Archivo is preloaded: it is the body face for every
- * theme. The others download only when a theme actually uses them.
+ * shopper's browser. Inter (body) and Plus Jakarta Sans (display) are preloaded
+ * for Detail Corner; alternate editorial pairings load only when selected.
  */
 
-export const archivo = Archivo({
+export const inter = Inter({
   subsets: ["latin", "latin-ext"],
-  axes: ["wdth"],
-  variable: "--font-archivo",
+  variable: "--font-inter",
+  display: "swap",
+});
+
+export const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-jakarta",
   display: "swap",
 });
 
@@ -42,6 +55,6 @@ export const plexArabic = IBM_Plex_Sans_Arabic({
   preload: false,
 });
 
-export const fontVariables = [archivo, bodoni, bricolage, geistMono, plexArabic]
+export const fontVariables = [inter, plusJakarta, bodoni, bricolage, geistMono, plexArabic]
   .map((font) => font.variable)
   .join(" ");

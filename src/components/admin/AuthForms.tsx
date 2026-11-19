@@ -3,6 +3,7 @@
 import { startTransition, useActionState, type FormEvent } from "react";
 import { buttonClass } from "@/components/ui/button";
 import { createOwnerAction, signInAction } from "@/server/actions/admin";
+import styles from "./admin.module.css";
 import { Notice, TextField } from "./ui";
 
 /**
@@ -24,7 +25,7 @@ function useFormAction<S>(action: (previous: S, form: FormData) => Promise<S>, i
 export function SignInForm({ autoFocus = true }: { autoFocus?: boolean }) {
   const { state, dispatch, pending, onSubmit } = useFormAction(signInAction, {});
   return (
-    <form action={dispatch} onSubmit={onSubmit} className="space-y-4">
+    <form action={dispatch} onSubmit={onSubmit} className={styles.stack4}>
       {state?.error && <Notice tone="danger">{state.error}</Notice>}
       <TextField label="Email" name="email" type="email" autoComplete="email" required autoFocus={autoFocus} />
       <TextField label="Password" name="password" type="password" autoComplete="current-password" required />
@@ -38,7 +39,7 @@ export function SignInForm({ autoFocus = true }: { autoFocus?: boolean }) {
 export function OwnerSetupForm({ tokenRequired }: { tokenRequired: boolean }) {
   const { state, dispatch, pending, onSubmit } = useFormAction(createOwnerAction, {});
   return (
-    <form action={dispatch} onSubmit={onSubmit} className="space-y-4">
+    <form action={dispatch} onSubmit={onSubmit} className={styles.stack4}>
       {state?.error && <Notice tone="danger">{state.error}</Notice>}
       <TextField label="Your email" name="email" type="email" autoComplete="email" required autoFocus />
       <TextField

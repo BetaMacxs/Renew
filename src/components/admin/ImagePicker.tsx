@@ -4,7 +4,18 @@ import { ImagePlus, LoaderCircle, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { uploadImage } from "@/lib/image-upload";
+import styles from "./admin.module.css";
 import { useToast } from "./ui";
+
+type AspectOption = "4/5" | "3/1" | "16/9" | "2/1" | "3/2";
+
+const ASPECT_CLASS: Record<AspectOption, string> = {
+  "4/5": styles.aspect4x5,
+  "3/1": styles.aspect3x1,
+  "16/9": styles.aspect16x9,
+  "2/1": styles.aspect2x1,
+  "3/2": styles.aspect3x2,
+};
 
 /**
  * A single image (logo, category photo, hero, banner): upload or replace,
@@ -14,14 +25,14 @@ export function ImagePicker({
   label,
   value,
   onChange,
-  aspect = "aspect-[4/5]",
+  aspect = "4/5",
   hint,
   fit = "cover",
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
-  aspect?: string;
+  aspect?: AspectOption;
   hint?: string;
   fit?: "cover" | "contain";
 }) {
@@ -45,9 +56,9 @@ export function ImagePicker({
 
   return (
     <div>
-      <p className="mb-1.5 text-sm font-medium">{label}</p>
+      <p className={styles.pickerLabel}>{label}</p>
       <div
-        className={`relative overflow-hidden rounded-[12px] border border-dashed border-line-strong bg-canvas ${aspect}`}
+        className={`${styles.pickerBox} ${ASPECT_CLASS[aspect]}`}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
@@ -55,41 +66,37 @@ export function ImagePicker({
         }}
       >
         {value ? (
-          <Image src={value} alt="" fill sizes="320px" className={fit === "contain" ? "object-contain p-4" : "object-cover"} />
+          <Image src={value} alt="" fill sizes="320px" className={fit === "contain" ? styles.pickerContain : styles.pickerCover} />
         ) : (
-          <button
-            type="button"
-            onClick={() => input.current?.click()}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-ink-2 hover:text-ink"
-          >
+          <button type="button" onClick={() => input.current?.click()} className={styles.pickerUploadBtn}>
             <ImagePlus size={22} />
             Upload a photo
           </button>
         )}
         {busy && (
-          <span className="absolute inset-0 grid place-items-center bg-paper/70">
+          <span className={styles.pickerBusyOverlay}>
             <LoaderCircle size={22} className="animate-spin" />
           </span>
         )}
       </div>
-      <div className="mt-2 flex items-center gap-3 text-sm">
+      <div className={styles.pickerActions}>
         {value && (
           <>
-            <button type="button" onClick={() => input.current?.click()} className="font-medium underline-offset-4 hover:underline">
+            <button type="button" onClick={() => input.current?.click()} className={styles.pickerReplaceBtn}>
               Replace
             </button>
-            <button type="button" onClick={() => onChange("")} className="inline-flex items-center gap-1 text-ink-3 hover:text-danger">
+            <button type="button" onClick={() => onChange("")} className={styles.pickerRemoveBtn}>
               <Trash2 size={14} /> Remove
             </button>
           </>
         )}
-        {hint && <span className="text-xs text-ink-3">{hint}</span>}
+        {hint && <span className={styles.fieldHint}>{hint}</span>}
       </div>
       <input
         ref={input}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif"
-        className="hidden"
+        className={styles.hiddenInput}
         onChange={(event) => void pick(event.target.files?.[0])}
       />
     </div>

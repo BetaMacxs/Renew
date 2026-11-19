@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatMoney, type MoneyFormat } from "@/lib/domain/money";
+import styles from "./admin.module.css";
 
 /**
  * Confirmed sales per day for the last 30 days — a single series, so the
@@ -34,10 +35,10 @@ export function SalesChart({
   const active = hover === null ? null : daily[hover];
 
   return (
-    <div className="relative">
+    <div className={styles.chartWrap}>
       <svg
         viewBox={`0 0 ${width} ${height + 1}`}
-        className="h-36 w-full overflow-visible"
+        className={styles.chartSvg}
         role="img"
         aria-label="Confirmed sales per day, last 30 days"
         preserveAspectRatio="none"
@@ -70,17 +71,17 @@ export function SalesChart({
           );
         })}
       </svg>
-      <div className="mt-2 flex justify-between text-xs text-ink-3" aria-hidden="true">
+      <div className={styles.chartDates} aria-hidden="true">
         <span>{label(daily[0]?.date ?? "")}</span>
         <span>{label(daily.at(-1)?.date ?? "")}</span>
       </div>
       {active && hover !== null && (
         <div
-          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-[8px] bg-ink px-2.5 py-1.5 text-xs text-paper shadow-lg"
+          className={styles.chartTooltip}
           style={{ left: `${((hover + 0.5) / daily.length) * 100}%` }}
         >
-          <p className="font-medium">{label(active.date)}</p>
-          <p className="font-mono">
+          <p className={styles.chartTooltipDate}>{label(active.date)}</p>
+          <p className="mono">
             {formatMoney(active.total, money, "full")} · {active.count} {active.count === 1 ? "order" : "orders"}
           </p>
         </div>

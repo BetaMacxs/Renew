@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/domain/money";
 import { searchAction, type SearchHit } from "@/server/actions/storefront";
 import { Drawer } from "@/components/ui/Drawer";
 import { useStore } from "./StoreProvider";
+import styles from "./store.module.css";
 
 /* ------------------------------------------------------------------- bag */
 
@@ -21,13 +22,13 @@ export function CartButton() {
     <button
       type="button"
       onClick={() => setCartDrawer(true)}
-      className="relative grid size-11 place-items-center rounded-full hover:bg-canvas"
+      className={styles.headerIconBtn}
       aria-label={t.nav.openCart(count)}
       data-testid="cart-button"
     >
       <ShoppingBag size={21} strokeWidth={1.8} />
       {count > 0 && (
-        <span className="price absolute end-0.5 top-0.5 grid min-w-5 place-items-center rounded-full bg-accent px-1 text-[0.68rem] font-bold leading-5 text-accent-ink">
+        <span className={`price ${styles.cartBadge}`}>
           {count > 99 ? "99+" : count}
         </span>
       )}
@@ -45,7 +46,7 @@ export function SearchButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="grid size-11 place-items-center rounded-full hover:bg-canvas"
+        className={styles.headerIconBtn}
         aria-label={t.nav.search}
       >
         <Search size={20} strokeWidth={1.8} />
@@ -83,12 +84,12 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
       ref={dialog}
       onClose={onClose}
       onClick={(event) => event.target === event.currentTarget && dialog.current?.close()}
-      className="fixed inset-x-0 top-0 m-0 w-full max-w-none bg-transparent p-0 backdrop:bg-ink/40"
+      className={styles.searchDialog}
     >
-      <div className="bg-paper shadow-xl">
+      <div className={styles.searchSheet}>
         <form
           role="search"
-          className="mx-auto flex max-w-3xl items-center gap-3 px-5 py-4"
+          className={styles.searchForm}
           onSubmit={(event) => {
             event.preventDefault();
             const term = query.trim();
@@ -96,7 +97,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
             router.push(term ? `/shop?q=${encodeURIComponent(term)}` : "/shop");
           }}
         >
-          <Search size={20} className="shrink-0 text-ink-3" />
+          <Search size={20} className={styles.searchIcon} />
           <input
             autoFocus
             type="search"
@@ -104,33 +105,33 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t.nav.searchPlaceholder}
             aria-label={t.nav.searchPlaceholder}
-            className="h-12 min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-ink-3"
+            className={styles.searchInput}
             enterKeyHint="search"
           />
           <button
             type="button"
             onClick={() => dialog.current?.close()}
-            className="grid size-10 shrink-0 place-items-center rounded-full hover:bg-canvas"
+            className={styles.searchCloseBtn}
             aria-label={t.common.close}
           >
             <X size={20} />
           </button>
         </form>
         {(shown.length > 0 || pending) && (
-          <div className="border-t border-line">
-            <ul className="mx-auto grid max-w-3xl gap-1 px-3 py-3" aria-busy={pending}>
+          <div className={styles.searchResultsWrap}>
+            <ul className={styles.searchResultsList} aria-busy={pending}>
               {shown.map((hit) => (
                 <li key={hit.slug}>
                   <Link
                     href={`/products/${hit.slug}`}
                     onClick={() => dialog.current?.close()}
-                    className="flex items-center gap-4 rounded-[var(--radius-control)] px-2 py-2 hover:bg-canvas"
+                    className={styles.searchHitLink}
                   >
-                    <span className="relative size-14 shrink-0 overflow-hidden rounded-[var(--radius-control)] bg-tile">
-                      {hit.imageUrl && <Image src={hit.imageUrl} alt="" fill sizes="56px" className="object-cover" />}
+                    <span className={styles.searchHitThumb}>
+                      {hit.imageUrl && <Image src={hit.imageUrl} alt="" fill sizes="56px" className={styles.searchHitImg} />}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{hit.name}</span>
-                    <span className="price text-sm">
+                    <span className={styles.searchHitName}>{hit.name}</span>
+                    <span className={`price ${styles.searchHitPrice}`}>
                       {hit.varies
                         ? t.product.from(formatMoney(hit.price, config.money))
                         : formatMoney(hit.price, config.money)}
@@ -166,33 +167,33 @@ export function MobileMenu({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="grid size-11 place-items-center rounded-full hover:bg-canvas lg:hidden"
+        className={styles.headerIconBtn}
         aria-label={t.common.menu}
       >
         <Menu size={21} strokeWidth={1.8} />
       </button>
       <Drawer open={open} onClose={() => setOpen(false)} title={storeName} side="start" closeLabel={t.common.close}>
-        <nav className="flex flex-col px-5 py-4">
-          <ul className="flex flex-col">
+        <nav className={styles.mobileNav}>
+          <ul className={styles.mobilePrimaryList}>
             {primary.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="display flex items-center justify-between border-b border-line py-4 text-[1.35rem]"
+                  className={`display ${styles.mobilePrimaryLink}`}
                 >
                   {link.label}
                 </Link>
               </li>
             ))}
           </ul>
-          <ul className="mt-6 flex flex-col gap-1">
+          <ul className={styles.mobileSecondaryList}>
             {secondary.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="block py-2 text-sm text-ink-2 hover:text-ink"
+                  className={styles.mobileSecondaryLink}
                 >
                   {link.label}
                 </Link>

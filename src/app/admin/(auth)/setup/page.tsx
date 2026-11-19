@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import styles from "@/components/admin/admin.module.css";
 import { OwnerSetupForm } from "@/components/admin/AuthForms";
 import { Notice } from "@/components/admin/ui";
 import { getBackend } from "@/server/backend";
@@ -16,20 +17,20 @@ export default async function SetupPage() {
   if (state.kind !== "needs-owner") redirect("/admin/login");
 
   return (
-    <div className="rounded-[18px] border border-line bg-paper p-6 shadow-sm sm:p-8">
+    <div className={styles.authCard}>
       <p className="eyebrow">Welcome</p>
-      <h1 className="display mt-2 text-2xl">Create the owner account</h1>
-      <p className="mt-3 text-sm text-ink-2">
+      <h1 className={`display ${styles.authTitle}`}>Create the owner account</h1>
+      <p className={styles.authBodyCopy}>
         This is the login you&apos;ll use to manage products, orders and settings. It can only be created once.
       </p>
-      <div className="mt-6">
+      <div className={styles.authSection}>
         {state.setupAllowed ? (
           <OwnerSetupForm tokenRequired={state.tokenRequired} />
         ) : (
           <Notice tone="warning" title="Setup is locked">
-            This store is running in production without an owner. Add an <code>ADMIN_SETUP_TOKEN</code> environment
-            variable (any long random value), restart the app, then enter that token here — or run{" "}
-            <code>npm run admin:create</code> on the server.
+            This store is running in production without an owner. Add an <code className={styles.inlineCode}>ADMIN_SETUP_TOKEN</code>{" "}
+            environment variable (any long random value) in your host settings, restart or redeploy the app, then enter
+            that token here.
           </Notice>
         )}
       </div>

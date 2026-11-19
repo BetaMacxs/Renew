@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { productInputSchema } from "./admin-schemas";
 import { facetsFor, filterProducts, parseProductQuery, searchProducts, sortProducts, storefrontProducts } from "./catalog-query";
 import { grouping, product, tee, variant } from "./fixtures.test-utils";
-import { discountPercent, formatMoney, isSupportedCurrency, multiplyMoney, sumMoney } from "./money";
+import { discountPercent, formatMoney, includedVatAmount, isSupportedCurrency, multiplyMoney, sumMoney } from "./money";
 import { isValidWhatsAppNumber, normalizePhone } from "./phone";
 import {
   defaultVariant,
@@ -14,7 +14,7 @@ import {
   stockIssue,
   variantLabel,
 } from "./product";
-import { DEFAULT_SETTINGS, isSafeHref, parseSettings, settingsSchema } from "./settings";
+import { DEFAULT_SETTINGS, imageUrlSchema, isSafeHref, parseSettings, settingsSchema } from "./settings";
 import { slugify, uniqueSlug } from "./slug";
 import { combinations, optionProblems, renameOptionValue, syncVariants } from "./variants";
 
@@ -41,6 +41,23 @@ describe("money", () => {
     expect(formatMoney(1299, { currency: "EUR", locale: "fr" })).toMatch(/1\s?299\s?€/);
     // Arabic storefronts keep Latin digits.
     expect(formatMoney(120, { currency: "MAD", locale: "ar-u-nu-latn" })).toMatch(/120/);
+  });
+
+  it("formats ZAR in South African Rand with R symbol", () => {
+    const zar = { currency: "ZAR", locale: "en" };
+    expect(isSupportedCurrency("ZAR")).toBe(true);
+    expect(formatMoney(500, zar)).toMatch(/^R\s?500$/);
+    expect(formatMoney(1299.5, zar)).toMatch(/^R\s?1,299\.50$/);
+    expect(formatMoney(1000, zar, "full")).toMatch(/^R\s?1,000\.00$/);
+  });
+
+  it("calculates VAT-inclusive amounts accurately (15/115 for SA 15% VAT)", () => {
+    expect(includedVatAmount(115, 15)).toBe(15);
+    expect(includedVatAmount(500, 15)).toBe(65.22);
+    expect(includedVatAmount(1000, 15)).toBe(130.43);
+    expect(includedVatAmount(0, 15)).toBe(0);
+    expect(includedVatAmount(100, 0)).toBe(0);
+    expect(includedVatAmount(-50, 15)).toBe(0);
   });
 
   it("never throws on an unknown currency", () => {
@@ -74,6 +91,8 @@ describe("settings", () => {
     expect(DEFAULT_SETTINGS.shipping.methods.length).toBeGreaterThan(0);
     expect(DEFAULT_SETTINGS.homepage.sections.length).toBeGreaterThan(0);
     expect(DEFAULT_SETTINGS.contact.whatsapp).toBe("");
+    expect(DEFAULT_SETTINGS.checkout.vatEnabled).toBe(false);
+    expect(DEFAULT_SETTINGS.checkout.vatRate).toBe(15);
   });
 
   it("normalises the WhatsApp number on save and rejects national formats", () => {
@@ -98,6 +117,11 @@ describe("settings", () => {
     expect(isSafeHref("javascript:alert(1)")).toBe(false);
     expect(isSafeHref("//evil.example")).toBe(false);
     expect(settingsSchema.safeParse({ homepage: { hero: { primaryHref: "javascript:x" } } }).success).toBe(false);
+    expect(imageUrlSchema.safeParse("/uploads/a.webp").success).toBe(true);
+    expect(imageUrlSchema.safeParse("https://cdn.example/a.webp").success).toBe(true);
+    expect(imageUrlSchema.safeParse("//evil.example/a.webp").success).toBe(false);
+    expect(imageUrlSchema.safeParse("javascript:alert(1)").success).toBe(false);
+    expect(imageUrlSchema.safeParse("http://insecure.example/a.webp").success).toBe(false);
   });
 });
 

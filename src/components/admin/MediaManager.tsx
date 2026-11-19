@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ProductImage } from "@/lib/domain/types";
 import { uploadImage } from "@/lib/image-upload";
 import { uid } from "@/lib/uid";
+import styles from "./admin.module.css";
 import { useToast } from "./ui";
 
 export const MAX_PRODUCT_IMAGES = 12;
@@ -74,22 +75,20 @@ export function MediaManager({
           setDragOver(false);
           if (event.dataTransfer.files.length) void addFiles(event.dataTransfer.files);
         }}
-        className={`grid grid-cols-2 gap-3 rounded-[12px] sm:grid-cols-3 lg:grid-cols-4 ${dragOver ? "outline-2 outline-dashed outline-accent outline-offset-4" : ""}`}
+        className={`${styles.mediaGrid} ${dragOver ? styles.mediaGridDrag : ""}`}
       >
         {images.map((image, index) => (
-          <figure key={image.id} className="group flex flex-col gap-2">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[10px] bg-tile">
-              <Image src={image.url} alt={image.alt || ""} fill sizes="200px" className="object-cover" />
-              {index === 0 && (
-                <span className="absolute start-2 top-2 rounded-full bg-paper/95 px-2 py-0.5 text-[0.7rem] font-semibold">Main photo</span>
-              )}
-              <div className="absolute inset-x-2 bottom-2 flex justify-between gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
-                <span className="flex gap-1">
+          <figure key={image.id} className={styles.mediaCard}>
+            <div className={styles.mediaThumbWrap}>
+              <Image src={image.url} alt={image.alt || ""} fill sizes="200px" className={styles.imageCover} />
+              {index === 0 && <span className={styles.mediaMainBadge}>Main photo</span>}
+              <div className={styles.mediaOverlayBar}>
+                <span className={styles.mediaMoveGroup}>
                   <button
                     type="button"
                     onClick={() => move(index, -1)}
                     disabled={index === 0}
-                    className="grid size-8 place-items-center rounded-full bg-paper/95 shadow disabled:opacity-40"
+                    className={styles.mediaCircleBtn}
                     aria-label={`Move photo ${index + 1} earlier`}
                   >
                     <ArrowLeft size={15} />
@@ -98,7 +97,7 @@ export function MediaManager({
                     type="button"
                     onClick={() => move(index, 1)}
                     disabled={index === images.length - 1}
-                    className="grid size-8 place-items-center rounded-full bg-paper/95 shadow disabled:opacity-40"
+                    className={styles.mediaCircleBtn}
                     aria-label={`Move photo ${index + 1} later`}
                   >
                     <ArrowRight size={15} />
@@ -107,7 +106,7 @@ export function MediaManager({
                 <button
                   type="button"
                   onClick={() => onChange(images.filter((candidate) => candidate.id !== image.id))}
-                  className="grid size-8 place-items-center rounded-full bg-paper/95 text-danger shadow"
+                  className={styles.mediaCircleBtnDanger}
                   aria-label={`Remove photo ${index + 1}`}
                 >
                   <Trash2 size={15} />
@@ -122,31 +121,27 @@ export function MediaManager({
               placeholder="Describe the photo"
               aria-label={`Description of photo ${index + 1}`}
               maxLength={200}
-              className="w-full rounded-[8px] border border-line bg-paper px-2.5 py-1.5 text-xs outline-none focus:border-ink"
+              className={styles.mediaAltInput}
             />
           </figure>
         ))}
 
         {Array.from({ length: uploading }, (_, index) => (
-          <div key={`uploading-${index}`} className="grid aspect-[4/5] place-items-center rounded-[10px] bg-canvas">
-            <LoaderCircle size={22} className="animate-spin text-ink-3" />
+          <div key={`uploading-${index}`} className={styles.mediaUploadingSlot}>
+            <LoaderCircle size={22} className="animate-spin" />
           </div>
         ))}
 
         {images.length + uploading < MAX_PRODUCT_IMAGES && (
-          <button
-            type="button"
-            onClick={() => input.current?.click()}
-            className="flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-line-strong bg-canvas px-3 text-center text-sm text-ink-2 hover:border-ink hover:text-ink"
-          >
+          <button type="button" onClick={() => input.current?.click()} className={styles.mediaAddSlot}>
             <ImagePlus size={22} />
-            <span className="font-medium">Add photos</span>
-            <span className="text-xs text-ink-3">or drop them here</span>
+            <span className={styles.mediaAddTitle}>Add photos</span>
+            <span className={styles.fieldHint}>or drop them here</span>
           </button>
         )}
       </div>
-      {error && <p className="mt-2 text-xs font-medium text-danger">{error}</p>}
-      <p className="mt-3 text-xs text-ink-3">
+      {error && <p className={styles.fieldError}>{error}</p>}
+      <p className={styles.mediaNote}>
         Photos are resized automatically. Portrait (4:5) photos on a plain background look best. The first photo is used on
         product cards and when the page is shared.
       </p>
@@ -155,7 +150,7 @@ export function MediaManager({
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif"
         multiple
-        className="hidden"
+        className={styles.hiddenInput}
         onChange={(event) => event.target.files && void addFiles(event.target.files)}
       />
     </div>

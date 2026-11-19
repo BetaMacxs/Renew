@@ -2,6 +2,7 @@ import { ArrowRight, Check, CircleDashed, PackageX, ReceiptText, Truck } from "l
 import type { Metadata } from "next";
 import Link from "next/link";
 import { WhatsAppIcon } from "@/components/icons/brands";
+import styles from "@/components/admin/admin.module.css";
 import { ChannelBadge, formatRelative, OrderStatusPill } from "@/components/admin/OrderBits";
 import { SalesChart } from "@/components/admin/SalesChart";
 import { EmptyState, Notice, PageHeader, Panel } from "@/components/admin/ui";
@@ -9,6 +10,7 @@ import { buttonClass } from "@/components/ui/button";
 import { formatMoney, type MoneyFormat } from "@/lib/domain/money";
 import { orderMetrics } from "@/lib/domain/orders";
 import { stockIssue } from "@/lib/domain/product";
+import { detectDemoSettings } from "@/lib/demo/seed";
 import { DEFAULT_SETTINGS, isWhatsAppConfigured } from "@/lib/domain/settings";
 import { requireAdmin } from "@/server/admin";
 
@@ -37,6 +39,7 @@ export default async function OverviewPage() {
   const low = active.filter((product) => stockIssue(product) === "low");
   const demoProducts = catalog.products.filter((product) => product.isDemo).length;
   const ownProducts = catalog.products.length - demoProducts;
+  const demoSettingsHits = detectDemoSettings(settings);
 
   const checklist = [
     { done: settings.store.name !== DEFAULT_SETTINGS.store.name, label: "Name your store and add a logo", href: "/admin/settings#store" },
@@ -99,12 +102,12 @@ export default async function OverviewPage() {
       />
 
       {demoProducts > 0 && (
-        <div className="mb-6">
+        <div className={styles.mb6}>
           <Notice
             tone="info"
             title={`Your store is showing ${demoProducts} demo products`}
             action={
-              <Link href="/admin/settings#demo" className="text-sm font-semibold underline underline-offset-4">
+              <Link href="/admin/settings#demo" className={styles.textLink}>
                 Manage
               </Link>
             }
@@ -115,47 +118,61 @@ export default async function OverviewPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {demoProducts === 0 && demoSettingsHits.length > 0 && (
+        <div className={styles.mb6}>
+          <Notice
+            tone="warning"
+            title="Sample demo settings are still visible on your storefront"
+            action={
+              <Link href="/admin/settings#demo" className={styles.textLink}>
+                Clean demo settings
+              </Link>
+            }
+          >
+            Detected: {demoSettingsHits.join(", ")}. Clear them before going live.
+          </Notice>
+        </div>
+      )}
+
+      <div className={styles.attentionGrid}>
         {attention.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`group rounded-[14px] border p-5 transition-colors ${
-              item.count > 0 ? "border-ink bg-paper" : "border-line bg-paper/60 text-ink-3"
-            }`}
+            className={`${styles.attentionCard} ${item.count > 0 ? styles.attentionCardActive : styles.attentionCardMuted}`}
           >
-            <div className="flex items-center justify-between">
-              <span className={item.count > 0 ? "text-ink" : "text-ink-3"}>{item.icon}</span>
-              <ArrowRight size={16} className="opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className={styles.attentionTop}>
+              <span className={item.count > 0 ? styles.attentionIconActive : styles.attentionIconMuted}>{item.icon}</span>
+              <ArrowRight size={16} className={styles.attentionArrow} />
             </div>
-            <p className="price mt-4 text-3xl font-semibold">{item.count}</p>
-            <p className="mt-1 text-sm font-medium">{item.label}</p>
-            <p className="mt-1 text-xs text-ink-3">{item.hint}</p>
+            <p className={`price ${styles.attentionCount}`}>{item.count}</p>
+            <p className={styles.attentionLabel}>{item.label}</p>
+            <p className={styles.attentionHint}>{item.hint}</p>
           </Link>
         ))}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className={styles.overviewSplit}>
         <Panel
           title="Confirmed sales · last 30 days"
           description="Only orders you confirmed count. WhatsApp handoffs and unconfirmed orders never do."
         >
-          <div className="mb-5 flex flex-wrap gap-x-10 gap-y-3">
+          <div className={styles.salesTotals}>
             <div>
-              <p className="price text-3xl font-semibold">{formatMoney(metrics.salesTotal, money, "full")}</p>
-              <p className="text-xs text-ink-3">
+              <p className={`price ${styles.salesPrimary}`}>{formatMoney(metrics.salesTotal, money, "full")}</p>
+              <p className={styles.salesSub}>
                 {metrics.salesCount} {metrics.salesCount === 1 ? "order" : "orders"}
               </p>
             </div>
             <div>
-              <p className="price text-3xl font-semibold text-ink-2">{formatMoney(metrics.paidTotal, money, "full")}</p>
-              <p className="text-xs text-ink-3">marked as paid</p>
+              <p className={`price ${styles.salesSecondary}`}>{formatMoney(metrics.paidTotal, money, "full")}</p>
+              <p className={styles.salesSub}>marked as paid</p>
             </div>
           </div>
           {metrics.salesCount > 0 ? (
             <SalesChart daily={metrics.daily} money={money} />
           ) : (
-            <p className="rounded-[10px] bg-canvas px-4 py-6 text-center text-sm text-ink-3">
+            <p className={styles.salesEmpty}>
               No confirmed orders yet. When you confirm an order, it shows up here.
             </p>
           )}
@@ -163,21 +180,18 @@ export default async function OverviewPage() {
 
         {remaining > 0 ? (
           <Panel title="Set up your store" description={`${checklist.length - remaining} of ${checklist.length} done`}>
-            <ul className="space-y-1">
+            <ul className={styles.checklist}>
               {checklist.map((item) => (
                 <li key={item.label}>
-                  <Link
-                    href={item.href}
-                    className="flex items-center gap-3 rounded-[10px] px-2 py-2 text-sm hover:bg-canvas"
-                  >
+                  <Link href={item.href} className={styles.checklistItem}>
                     {item.done ? (
-                      <span className="grid size-5 place-items-center rounded-full bg-success text-white">
+                      <span className={styles.checkCircle}>
                         <Check size={13} strokeWidth={3} />
                       </span>
                     ) : (
-                      <CircleDashed size={20} className="text-ink-3" />
+                      <CircleDashed size={20} className={styles.checkDashed} />
                     )}
-                    <span className={item.done ? "text-ink-3 line-through" : "font-medium"}>{item.label}</span>
+                    <span className={item.done ? styles.checkLabelDone : styles.checkLabelTodo}>{item.label}</span>
                   </Link>
                 </li>
               ))}
@@ -185,14 +199,14 @@ export default async function OverviewPage() {
           </Panel>
         ) : (
           <Panel title="Catalog">
-            <dl className="grid grid-cols-2 gap-4 text-sm">
+            <dl className={styles.catalogStats}>
               <div>
-                <dt className="text-ink-3">Live products</dt>
-                <dd className="price text-2xl font-semibold">{active.length}</dd>
+                <dt className={styles.catalogStatLabel}>Live products</dt>
+                <dd className={`price ${styles.catalogStatValue}`}>{active.length}</dd>
               </div>
               <div>
-                <dt className="text-ink-3">Drafts</dt>
-                <dd className="price text-2xl font-semibold">{drafts}</dd>
+                <dt className={styles.catalogStatLabel}>Drafts</dt>
+                <dd className={`price ${styles.catalogStatValue}`}>{drafts}</dd>
               </div>
             </dl>
           </Panel>
@@ -200,11 +214,11 @@ export default async function OverviewPage() {
       </div>
 
       <Panel
-        className="mt-6"
+        className={styles.mt6}
         padded={false}
         title="Latest orders"
         actions={
-          <Link href="/admin/orders" className="text-sm font-semibold underline-offset-4 hover:underline">
+          <Link href="/admin/orders" className={styles.textLink}>
             All orders
           </Link>
         }
@@ -214,21 +228,21 @@ export default async function OverviewPage() {
             Orders placed on your website, and WhatsApp orders customers start, will appear here.
           </EmptyState>
         ) : (
-          <ul className="divide-y divide-line">
+          <ul className={styles.dividerList}>
             {recent.orders.map((order) => (
               <li key={order.id}>
-                <Link href={`/admin/orders/${order.id}`} className="grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-3.5 hover:bg-canvas sm:grid-cols-[5rem_1fr_auto_auto]">
-                  <span className="font-mono text-sm font-semibold">#{order.number}</span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">{order.customer.name}</span>
-                    <span className="flex items-center gap-3 text-xs text-ink-3">
+                <Link href={`/admin/orders/${order.id}`} className={styles.recentRow}>
+                  <span className={`mono ${styles.recentNumber}`}>#{order.number}</span>
+                  <span className={styles.recentMain}>
+                    <span className={styles.recentName}>{order.customer.name}</span>
+                    <span className={styles.recentMeta}>
                       <ChannelBadge channel={order.channel} /> {formatRelative(order.createdAt, now.getTime())}
                     </span>
                   </span>
-                  <span className="hidden sm:block">
+                  <span className={styles.recentStatus}>
                     <OrderStatusPill status={order.status} />
                   </span>
-                  <span className="font-mono text-sm">{formatMoney(order.total, money, "full")}</span>
+                  <span className="mono">{formatMoney(order.total, money, "full")}</span>
                 </Link>
               </li>
             ))}

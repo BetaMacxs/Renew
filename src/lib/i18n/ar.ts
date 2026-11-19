@@ -153,6 +153,8 @@ export const ar: Dictionary = {
     shipping: "التوصيل",
     shippingAtCheckout: "يُختار عند إتمام الطلب",
     total: "الإجمالي",
+    vatIncluded: (rate, vatNumber) =>
+      vatNumber ? `شامل ${rate}% ضريبة (${vatNumber})` : `شامل ${rate}% ضريبة`,
     checkout: "إتمام الطلب",
     viewCart: "عرض السلة",
     freeShippingRemaining: (amount) => `بقي ${amount} للحصول على توصيل مجاني`,

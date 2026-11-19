@@ -1,6 +1,7 @@
 import { ReceiptText, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import styles from "@/components/admin/admin.module.css";
 import { ChannelBadge, formatRelative, OrderStatusPill, PaymentPill } from "@/components/admin/OrderBits";
 import { DiscardStaleButton } from "@/components/admin/OrderListActions";
 import { EmptyState, Notice, PageHeader, Panel } from "@/components/admin/ui";
@@ -62,8 +63,8 @@ export default async function OrdersPage({ searchParams }: Props) {
         description="Website orders arrive here as soon as they're placed. WhatsApp orders appear first as unverified handoffs."
       />
 
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <nav className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:px-0" aria-label="Order views">
+      <div className={styles.toolbar}>
+        <nav className={`scrollbar-none ${styles.tabsScroll}`} aria-label="Order views">
           {VIEWS.map((candidate) => {
             const active = candidate.key === view.key;
             const count = countFor(candidate.statuses);
@@ -72,31 +73,29 @@ export default async function OrdersPage({ searchParams }: Props) {
                 key={candidate.key}
                 href={href({ view: candidate.key, page: undefined })}
                 aria-current={active ? "page" : undefined}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
-                  active ? "bg-ink text-paper" : "text-ink-2 hover:bg-paper"
-                }`}
+                className={`${styles.tabLink} ${active ? styles.tabLinkActive : ""}`}
               >
                 {candidate.label}
-                <span className={`price text-xs ${active ? "text-paper/80" : "text-ink-3"}`}>{count}</span>
+                <span className={`price ${styles.tabCount} ${active ? styles.tabCountActive : ""}`}>{count}</span>
               </Link>
             );
           })}
         </nav>
-        <form className="relative" role="search">
+        <form className={styles.searchForm} role="search">
           <input type="hidden" name="view" value={view.key} />
-          <Search size={16} className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-ink-3" />
+          <Search size={16} className={styles.searchIcon} />
           <input
             name="q"
             defaultValue={search}
             placeholder="Order #, name, phone or email"
             aria-label="Search orders"
-            className="h-10 w-full rounded-full border border-line-strong bg-paper pe-4 ps-9 text-sm outline-none focus:border-ink lg:w-72"
+            className={styles.searchInput}
           />
         </form>
       </div>
 
       {view.key === "whatsapp" && (
-        <div className="mb-4">
+        <div className={styles.mb4}>
           <Notice
             tone="warning"
             title="Unverified until you see the message"
@@ -115,41 +114,41 @@ export default async function OrdersPage({ searchParams }: Props) {
             {search ? "Try the order number on its own, or part of the customer's name." : "Orders in this state will appear here."}
           </EmptyState>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[44rem] text-sm">
-              <thead className="border-b border-line text-start text-xs text-ink-3">
+          <div className={styles.tableWrap}>
+            <table className={styles.ordersTable}>
+              <thead className={styles.tableHead}>
                 <tr>
-                  <th scope="col" className="px-5 py-3 text-start font-medium">Order</th>
-                  <th scope="col" className="px-3 py-3 text-start font-medium">Customer</th>
-                  <th scope="col" className="px-3 py-3 text-start font-medium">Status</th>
-                  <th scope="col" className="px-3 py-3 text-start font-medium">Payment</th>
-                  <th scope="col" className="px-5 py-3 text-end font-medium">Total</th>
+                  <th scope="col" className={styles.thFirst}>Order</th>
+                  <th scope="col" className={styles.thStart}>Customer</th>
+                  <th scope="col" className={styles.thStart}>Status</th>
+                  <th scope="col" className={styles.thStart}>Payment</th>
+                  <th scope="col" className={styles.thLast}>Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className={styles.dividerTable}>
                 {list.orders.map((order) => (
-                  <tr key={order.id} className="group relative hover:bg-canvas">
-                    <td className="px-5 py-3.5 align-top">
-                      <Link href={`/admin/orders/${order.id}`} className="font-mono font-semibold after:absolute after:inset-0">
+                  <tr key={order.id} className={styles.orderRow}>
+                    <td className={styles.tdFirst}>
+                      <Link href={`/admin/orders/${order.id}`} className={`mono ${styles.orderRowLink}`}>
                         #{order.number}
                       </Link>
-                      <p className="mt-0.5 text-xs text-ink-3">{formatRelative(order.createdAt, now.getTime())}</p>
+                      <p className={styles.cellSub}>{formatRelative(order.createdAt, now.getTime())}</p>
                     </td>
-                    <td className="px-3 py-3.5 align-top">
-                      <p className="font-medium">{order.customer.name}</p>
-                      <div className="mt-0.5 flex items-center gap-3 text-xs text-ink-3">
+                    <td className={styles.tdMid}>
+                      <p className={styles.strongText}>{order.customer.name}</p>
+                      <div className={styles.cellMetaRow}>
                         <ChannelBadge channel={order.channel} />
                         {order.customer.phone && <span dir="ltr">{order.customer.phone}</span>}
                       </div>
                     </td>
-                    <td className="px-3 py-3.5 align-top">
+                    <td className={styles.tdMid}>
                       <OrderStatusPill status={order.status} />
-                      {isStaleHandoff(order, now) && <p className="mt-1 text-xs text-ink-3">Over a week old</p>}
+                      {isStaleHandoff(order, now) && <p className={styles.staleHint}>Over a week old</p>}
                     </td>
-                    <td className="px-3 py-3.5 align-top">
+                    <td className={styles.tdMid}>
                       <PaymentPill order={order} />
                     </td>
-                    <td className="px-5 py-3.5 text-end align-top font-mono">{formatMoney(order.total, money, "full")}</td>
+                    <td className={`mono ${styles.tdLast}`}>{formatMoney(order.total, money, "full")}</td>
                   </tr>
                 ))}
               </tbody>
@@ -159,18 +158,18 @@ export default async function OrdersPage({ searchParams }: Props) {
       </Panel>
 
       {pages > 1 && (
-        <nav className="mt-6 flex items-center justify-between text-sm" aria-label="Pagination">
-          <span className="text-ink-3">
+        <nav className={styles.pagination} aria-label="Pagination">
+          <span className={styles.paginationMeta}>
             Page {page} of {pages} · {list.total} orders
           </span>
-          <div className="flex gap-2">
+          <div className={styles.flexWrapGap2}>
             {page > 1 && (
-              <Link href={href({ page: page - 1 })} className="rounded-full border border-line-strong bg-paper px-4 py-2 font-medium">
+              <Link href={href({ page: page - 1 })} className={styles.pageLink}>
                 Previous
               </Link>
             )}
             {page < pages && (
-              <Link href={href({ page: page + 1 })} className="rounded-full border border-line-strong bg-paper px-4 py-2 font-medium">
+              <Link href={href({ page: page + 1 })} className={styles.pageLink}>
                 Next
               </Link>
             )}

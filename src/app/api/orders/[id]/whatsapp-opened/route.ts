@@ -15,7 +15,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   if (!UUID.test(id)) return new Response(null, { status: 404 });
-  if (!rateLimit(`opened:${await clientAddress()}`, 30, 10 * 60 * 1000).ok) {
+  if (!(await rateLimit(`opened:${await clientAddress()}`, 30, 10 * 60 * 1000)).ok) {
     return new Response(null, { status: 429 });
   }
 

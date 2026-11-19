@@ -1,5 +1,6 @@
 import { Info } from "lucide-react";
 import { DemoExploreLink } from "./DemoExploreLink";
+import styles from "./store.module.css";
 import type { Dictionary } from "@/lib/i18n";
 
 /**
@@ -10,12 +11,12 @@ import type { Dictionary } from "@/lib/i18n";
 
 export function DemoBar({ storeName, t }: { storeName: string; t: Dictionary }) {
   return (
-    <div className="bg-ink text-paper" data-testid="demo-bar">
-      <p className="mx-auto flex max-w-[90rem] flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-4 py-2 text-center text-[0.78rem]">
+    <div className={styles.demoBar} data-testid="demo-bar">
+      <p className={styles.demoBarText}>
         <span>{t.demo.bar(storeName)}</span>
-        <DemoExploreLink className="font-semibold underline underline-offset-4">
+        <DemoExploreLink className={styles.demoExploreLink}>
           {t.demo.explore}
-          <span aria-hidden="true" className="flip-rtl ms-1 inline-block">
+          <span aria-hidden="true" className={`flip-rtl ${styles.demoExploreArrow}`}>
             →
           </span>
         </DemoExploreLink>
@@ -26,11 +27,8 @@ export function DemoBar({ storeName, t }: { storeName: string; t: Dictionary }) 
 
 export function DemoNotice({ children }: { children: string }) {
   return (
-    <p
-      className="flex items-start gap-2.5 rounded-[var(--radius-control)] bg-info-soft px-4 py-3 text-sm font-medium text-info"
-      data-testid="demo-notice"
-    >
-      <Info size={17} className="mt-0.5 shrink-0" />
+    <p className={styles.demoNotice} data-testid="demo-notice">
+      <Info size={17} className={styles.demoNoticeIcon} />
       {children}
     </p>
   );

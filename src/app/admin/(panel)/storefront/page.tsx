@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
+import styles from "@/components/admin/admin.module.css";
 import { SettingsProvider } from "@/components/admin/settings-kit";
 import {
   AnnouncementPanel,
@@ -62,7 +63,7 @@ export default async function StorefrontPage() {
         }
       />
       <SettingsProvider initial={settings}>
-        <div className="space-y-6">
+        <div className={styles.stack6}>
           <ThemePanel storeName={settings.store.name} sample={sample} />
           <AnnouncementPanel links={links} />
           <HeroPanel links={links} />

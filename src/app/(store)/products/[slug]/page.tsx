@@ -7,6 +7,7 @@ import { WhatsAppIcon } from "@/components/icons/brands";
 import { Container, ProductRow } from "@/components/store/HomeSections";
 import { ProductView } from "@/components/store/ProductView";
 import { RichText } from "@/components/store/RichText";
+import styles from "@/components/store/store.module.css";
 import { buttonClass } from "@/components/ui/button";
 import { sortProducts, storefrontProducts } from "@/lib/domain/catalog-query";
 import { formatMoney } from "@/lib/domain/money";
@@ -74,18 +75,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
   if (product.status === "archived") {
     const image = primaryImage(product);
     return (
-      <Container className="pt-10">
-        <div className="mx-auto grid max-w-4xl items-center gap-8 rounded-card border border-line p-6 sm:grid-cols-[12rem_1fr] sm:p-8">
+      <Container className={styles.archivedWrap}>
+        <div className={styles.archivedCard}>
           {image && (
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[calc(var(--radius-card)*0.7)] bg-tile opacity-80">
-              <Image src={image.url} alt={product.name} fill sizes="12rem" className="object-cover grayscale-[40%]" />
+            <div className={styles.archivedThumb}>
+              <Image src={image.url} alt={product.name} fill sizes="12rem" className={styles.archivedImg} />
             </div>
           )}
           <div>
             <p className="eyebrow">{product.name}</p>
-            <h1 className="display mt-3 text-2xl sm:text-3xl">{t.product.noLongerAvailable}</h1>
-            <p className="mt-3 text-ink-2">{t.product.noLongerAvailableText}</p>
-            <Link href="/shop" className={buttonClass({ variant: "dark", className: "mt-6" })}>
+            <h1 className={`display ${styles.archivedHeading}`}>{t.product.noLongerAvailable}</h1>
+            <p className={styles.archivedText}>{t.product.noLongerAvailableText}</p>
+            <Link href="/shop" className={buttonClass({ variant: "dark", className: styles.archivedBtn })}>
               {t.notFound.cta}
             </Link>
           </div>
@@ -125,20 +126,19 @@ export default async function ProductPage({ params, searchParams }: Props) {
     <>
       <script
         type="application/ld+json"
-        // JSON.stringify output with "<" escaped cannot break out of the tag.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <Container className="pt-4 sm:pt-8">
-        <nav aria-label="Breadcrumb" className="mb-5 hidden text-sm text-ink-3 sm:block">
-          <ol className="flex flex-wrap items-center gap-2">
+      <Container className={styles.productPageTop}>
+        <nav aria-label="Breadcrumb" className={styles.breadcrumbNav}>
+          <ol className={styles.breadcrumbList}>
             <li>
-              <Link href="/" className="hover:text-ink">
+              <Link href="/" className={styles.breadcrumbLink}>
                 {t.common.home}
               </Link>
             </li>
             <li aria-hidden="true">/</li>
             <li>
-              <Link href="/shop" className="hover:text-ink">
+              <Link href="/shop" className={styles.breadcrumbLink}>
                 {t.nav.shop}
               </Link>
             </li>
@@ -146,7 +146,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
               <>
                 <li aria-hidden="true">/</li>
                 <li>
-                  <Link href={`/categories/${category.slug}`} className="hover:text-ink">
+                  <Link href={`/categories/${category.slug}`} className={styles.breadcrumbLink}>
                     {category.name}
                   </Link>
                 </li>
@@ -156,28 +156,27 @@ export default async function ProductPage({ params, searchParams }: Props) {
         </nav>
 
         <ProductView
-          // A different `?variant=` (a bag link on this same page) starts over.
           key={`${product.id}:${typeof variant === "string" ? variant : ""}`}
           product={product}
           productUrl={`${origin}/products/${product.slug}`}
           category={category ? { name: category.name, slug: category.slug } : null}
           variantId={typeof variant === "string" ? variant : null}
         >
-          <div className="mt-10 space-y-10">
+          <div className={styles.productExtras}>
             {product.description && (
               <section>
-                <h2 className="eyebrow mb-3">{t.product.description}</h2>
+                <h2 className={`eyebrow ${styles.productExtraEyebrow}`}>{t.product.description}</h2>
                 <RichText text={product.description} />
               </section>
             )}
 
             {product.specs.length > 0 && (
               <section>
-                <h2 className="eyebrow mb-3">{t.product.details}</h2>
-                <dl className="divide-y divide-line border-y border-line text-sm">
+                <h2 className={`eyebrow ${styles.productExtraEyebrow}`}>{t.product.details}</h2>
+                <dl className={styles.specsList}>
                   {product.specs.map((spec) => (
-                    <div key={spec.label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 py-3">
-                      <dt className="text-ink-3">{spec.label}</dt>
+                    <div key={spec.label} className={styles.specsRow}>
+                      <dt className={styles.specsLabel}>{spec.label}</dt>
                       <dd>{spec.value}</dd>
                     </div>
                   ))}
@@ -185,34 +184,34 @@ export default async function ProductPage({ params, searchParams }: Props) {
               </section>
             )}
 
-            <section className="rounded-card bg-canvas p-5 text-sm">
-              <h2 className="eyebrow mb-4">{t.product.deliveryTitle}</h2>
-              <ul className="space-y-3">
+            <section className={styles.deliveryBox}>
+              <h2 className={`eyebrow ${styles.deliveryTitle}`}>{t.product.deliveryTitle}</h2>
+              <ul className={styles.deliveryList}>
                 {settings.shipping.methods.map((method) => (
-                  <li key={method.id} className="flex gap-3">
-                    <Truck size={18} strokeWidth={1.6} className="mt-0.5 shrink-0" />
+                  <li key={method.id} className={styles.deliveryItem}>
+                    <Truck size={18} strokeWidth={1.6} className={styles.deliveryIcon} />
                     <span>
-                      <span className="font-medium">{method.name}</span>
-                      <span className="price ms-2 text-ink-2">
+                      <span className={styles.deliveryName}>{method.name}</span>
+                      <span className={`price ${styles.deliveryPrice}`}>
                         {method.price > 0 ? formatMoney(method.price, money) : t.checkout.free}
                       </span>
-                      {method.description && <span className="block text-ink-3">{method.description}</span>}
+                      {method.description && <span className={styles.deliveryDesc}>{method.description}</span>}
                     </span>
                   </li>
                 ))}
                 {threshold && (
-                  <li className="ps-[1.875rem] font-medium">
+                  <li className={styles.deliveryThreshold}>
                     {t.highlights.freeShippingOver(formatMoney(threshold, money))}
                   </li>
                 )}
                 {methods.map((method) => (
-                  <li key={method} className="flex gap-3">
+                  <li key={method} className={styles.deliveryItem}>
                     {method === "cod" ? (
-                      <Banknote size={18} strokeWidth={1.6} className="mt-0.5 shrink-0" />
+                      <Banknote size={18} strokeWidth={1.6} className={styles.deliveryIcon} />
                     ) : method === "bank_transfer" ? (
-                      <Landmark size={18} strokeWidth={1.6} className="mt-0.5 shrink-0" />
+                      <Landmark size={18} strokeWidth={1.6} className={styles.deliveryIcon} />
                     ) : (
-                      <WhatsAppIcon size={17} className="mt-0.5 shrink-0" />
+                      <WhatsAppIcon size={17} className={styles.deliveryIcon} />
                     )}
                     <span>
                       {method === "cod" ? t.highlights.cod : method === "bank_transfer" ? t.highlights.bank : t.highlights.whatsapp}
